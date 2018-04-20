@@ -1,29 +1,19 @@
 #lang racket
 (require (for-syntax racket/base syntax/parse racket/list))
 (require syntax/keyword)
+(require htdp/testing (for-syntax htdp/testing))
 
 ;; Syntax for @tags including basic syntax checking.
 ;; The tags are further checked through the grader framework.
 
-(provide @Problem          @HtDW
+(provide @Problem
+
+         @HtDW
          @HtDD
          @HtDF
           
          @dd-template-rules
          @template)
-
-;          Number Integer Natural String Boolean Image
-;
-;          ;<TypeName>     decomposition and possible structural recursion
-;          add-param       ;used once for 1 or more
-;          fn-composition
-;          backtracking
-;          2-one-of
-;          encapsulated
-;          use-abstract-fn
-;          genrec
-;          accumulator
-;          for-each))
 
 
 ;; @tags are checked for basic validity during parsing, they expand to
@@ -51,7 +41,31 @@
   '(atomic-non-distinct atomic-distinct one-of compound self-ref ref))
 
 
-(define-syntax (@Problem stx)
+(define-syntax (define-@Tag-syntax stx)
+  (syntax-case stx ()
+    [(_ tag arity-string kind-string checker)
+     #`(define-syntax (tag stx)
+         
+         (unless (member (syntax-local-context) '(module top-level))            
+           (raise-syntax-error #f (format "Found ~a that is not at top level" 'tag) stx))
+         
+         (syntax-case stx ()
+           [(_)        (raise-syntax-error #f (format "expected ~a ~a after ~a" arity-string kind-string 'tag) stx)]
+           [(_ . id) #'(#%expression (checker . id))]
+           [_          (raise-syntax-error #f (format "expected an open parenthesis before ~a" 'tag) stx)]))]))
+                                             
+
+
+
+(define-@Tag-syntax @Problem                    "one" "integer greater than 0"    check-problem-number)
+(define-@Tag-syntax @HtDF              "at least one" "function name"             check-defined-functions)
+(define-@Tag-syntax @HtDD              "at least one" "type name"                 check-defined-types)
+(define-@Tag-syntax @HtDW                       "one" "type name"                 check-defined-types) ;!!! restrict arity[
+(define-@Tag-syntax @template          "at least one" "template origin"           check-template-origins)
+(define-@Tag-syntax @dd-template-rules "at least one" "data driven template rule" check-dd-template-rules)
+
+
+(define-syntax (check-problem-number stx) ;!!! later make this check for duplicates  
   (syntax-case stx ()
     [(_ ns)
      (let ([n (syntax-e #'ns)])
@@ -60,61 +74,60 @@
          (raise-syntax-error "Expected integer 1 or greater." stx #'ns))
        #'(values))]))
 
-
-(define-syntax (@HtDF stx)
+(define-syntax (check-defined-functions stx)    
   (syntax-case stx ()
-    [(_ id ...)
-     (let ([id-stxs (syntax-e #'(id ...))])
-       (when (empty? id-stxs)
-         (raise-syntax-error #f "expected at least one function name after @HtDF" stx))
-       (for ([i id-stxs])
-            (unless (symbol? (syntax-e i))
-              (raise-syntax-error #f "expected a function name" stx i)))
-       #'(values))]))
+    [(_ i ...)
+     (for ([id-stx (syntax-e #'(i ...))])
+          (let ([id (syntax-e id-stx)])
+            (cond [(not (symbol? id))
+                   (raise-syntax-error '@HtDF (format "~a is not a function name" id) stx id-stx)]
+                  [(not (identifier-binding id-stx 0 #t))
+                   (raise-syntax-error id "this function is not defined" stx id-stx)])))
 
-(define-syntax (@HtDD stx)
-  (syntax-case stx ()
-    [(_ id ...)
-     (let ([id-stxs (syntax-e #'(id ...))])
-       (when (empty? id-stxs)
-         (raise-syntax-error #f "expected at least one type name after @HtDD" stx))
-       (for ([i id-stxs])
-            (unless (symbol? (syntax-e i))
-              (raise-syntax-error #f "expected a type name" stx i)))
-       #'(values))]))
-
-(define-syntax (@HtDW stx)
-  (syntax-case stx ()
-    [(_ id ...)
-     (let ([ids (syntax-e #'(id ...))])
-       (unless (and (not (empty? ids))
-                    (empty? (rest ids))
-                    (symbol? (syntax-e (first ids))))
-         (raise-syntax-error #f "expected a type name (the world state for this HtDW design)" stx))
-       #'(values))]))
-
-
-(define-syntax (@dd-template-rules stx)  
-  (syntax-case stx ()
-    [(_ r ...)
-     (for ([rule (syntax-e #'(r ...))])
-          (unless (member (syntax-e rule) DD-TEMPLATE-RULES)
-            (raise-syntax-error #f
-                                (format "Expected one of ~s." DD-TEMPLATE-RULES)
-                                stx
-                                rule)))
      #'(values)]))
 
-(define-syntax (@template stx)  
+(define-syntax (check-defined-types stx)    
   (syntax-case stx ()
-    [(_ o ...)
-     (for ([origin (syntax-e #'(o ...))])
-          (unless (symbol? (syntax-e origin))
-            (raise-syntax-error #f
-                                (format "Expected a TypeName or one of ~s." TEMPLATE-ORIGINS)
-                                stx
-                                origin)))
+    [(_ i ...)
+     (for ([id-stx (syntax-e #'(i ...))])
+          (let ([id (syntax-e id-stx)])
+            (cond [(not (symbol? id))
+                   (raise-syntax-error '@HtDD (format "~a is not a type name" id) stx id-stx)]
+                  ;[(not (identifier-binding id-stx 0 #t))
+                  ; (raise-syntax-error id "this function is not defined" stx id-stx)]
+                  )))
+
      #'(values)]))
+
+(define-syntax (check-template-origins stx)    
+  (syntax-case stx ()
+    [(_ i ...)
+     (for ([id-stx (syntax-e #'(i ...))])
+          (let ([id (syntax-e id-stx)])
+            (cond [(not (symbol? id))
+                   (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." id TEMPLATE-ORIGINS) stx id-stx)]
+                  ;[(not (identifier-binding id-stx 0 #t))
+                  ; (raise-syntax-error id "this function is not defined" stx id-stx)]
+                  )))
+
+     #'(values)]))     
+
+(define-syntax (check-dd-template-rules stx)    
+  (syntax-case stx ()
+    [(_ i ...)
+     (for ([id-stx (syntax-e #'(i ...))])
+          (let ([id (syntax-e id-stx)])
+            (cond [(not (member id DD-TEMPLATE-RULES))
+                   (raise-syntax-error '@dd-template-rules (format "~a is not one of ~a" id (format-list DD-TEMPLATE-RULES #t)) stx id-stx)])))
+
+     #'(values)]))
+
+
+(define-for-syntax (format-list l or?)
+  (cond [(empty? (rest l))
+         (format "~a ~a" (if or? "or" "and") (first l))]
+        [else
+         (format "~a, ~a" (first l) (format-list (rest l) or?))]))
 
 
 
