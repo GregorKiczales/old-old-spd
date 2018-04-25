@@ -48,8 +48,7 @@
 ;; that referenced functions are bound, problem numbers aren't duplicated etc.
 (define-syntax (define-@Tag-syntax stx)
   (syntax-case stx ()
-    [(_ tag arity-string kind-string checker)
-     
+    [(_ tag arity-string kind-string checker)     
      #`(define-syntax (tag stx)         
          (unless (member (syntax-local-context) '(module top-level))            
            (raise-syntax-error #f (format "Found ~a that is not at top level" 'tag) stx))         
@@ -62,7 +61,7 @@
 (define-@Tag-syntax @Problem                    "one" "integer greater than 0"    check-problem-number)
 (define-@Tag-syntax @HtDF              "at least one" "function name"             check-defined-functions)
 (define-@Tag-syntax @HtDD              "at least one" "type name"                 check-defined-types)
-(define-@Tag-syntax @HtDW                       "one" "type name"                 check-defined-types) ;!!! restrict arity[
+(define-@Tag-syntax @HtDW                       "one" "type name"                 check-defined-types) ;!!! restrict arity
 (define-@Tag-syntax @template          "at least one" "template origin"           check-template-origins)
 (define-@Tag-syntax @dd-template-rules "at least one" "data driven template rule" check-dd-template-rules)
 

@@ -1,8 +1,5 @@
 #lang racket
-(require syntax/parse)
-(require racket/syntax)
-(require (for-syntax racket/base racket/list racket/syntax syntax/parse syntax/free-vars))
-(require rackunit)
+(require (for-syntax racket/base racket/list))
 (require "tags.rkt")
 (require (rename-in "read-type.rkt"
                     (function-type signature)

@@ -1,1 +1,1 @@
-# spd-grader
+# spd
