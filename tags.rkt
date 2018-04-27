@@ -28,6 +28,7 @@
 (define-for-syntax TEMPLATE-ORIGINS
   '(;<TypeName>      decomposition and possible structural recursion
     add-param        ;used once for 1 or more atomic params
+    htdw-main    
     fn-composition   ;used once for composition of 2 or more fns
     backtracking     
     2-one-of
