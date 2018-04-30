@@ -16,14 +16,15 @@ the design recipe.
 
 In all the sub-sections below stop grading at the first line that
 fails. So a signature that is not well formed gets 0, even if it has
-some correct types.
+some correct types.  No partial credit is awarded other than what the
+rubric explicitly mentions.
 
 *** HtDF ***
 
 Signature:
-  1 well formed (at least one arg type, ->, one result type)
-  2  + correct arguments (number and types)
-  3  + correct result (type)
+  1 well formed (at least one arg type, ->, and one result type)
+  2  + arguments (correct number and types)
+  3  + result (correct type)
 
 Purpose:
   1 well formed (two ;;, <space>, <= 80 chars) 
