@@ -17,12 +17,7 @@
          @HtDF
           
          @dd-template-rules
-         @template
-         @test)
-
-(define (@test x) x)
-
-
+         @template)
 
 
 (define PRIMITIVE-TYPES
