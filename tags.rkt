@@ -17,13 +17,18 @@
          @HtDF
           
          @dd-template-rules
-         @template)
+         @template
+         @test)
+
+(define (@test x) x)
 
 
 
 
 (define PRIMITIVE-TYPES
-  '(Number Integer Natural String Boolean Image))
+  '(Number Integer Natural String Boolean Image
+           KeyEvent MouseEvent
+           1String))
 
 (define-for-syntax TEMPLATE-ORIGINS
   '(;<TypeName>      decomposition and possible structural recursion
