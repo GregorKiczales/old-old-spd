@@ -1,4 +1,5 @@
 
+This file is https://github.com/GregorKiczales/spd/blob/master/rubric.txt.
 
 Files that don't at least run get 0 marks.  Files that run, but
 have failing tests are assessed according to the following rubric.
@@ -20,6 +21,8 @@ some correct types.  No partial credit is awarded other than what the
 rubric explicitly mentions.
 
 *** HtDF ***
+
+/24
 
 Signature:
   1 well formed (at least one arg type, ->, and one result type)
@@ -64,10 +67,11 @@ Style:
 
 *** HtDD ***
 
+/15
 
 Type comment and define struct:
-  1 well formed  (Type is ... <newline> - ... etc.)
-  2  + appropriate form for information 
+  1 well formed  (Type is ... <possible newline> - well formed types...
+  2  + appropriate form of data for information 
   3  + relevant domain information is fully captured
 
 Interpretation:

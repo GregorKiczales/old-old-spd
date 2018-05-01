@@ -40,7 +40,7 @@
          (... s)]))
 
 (@Problem 3)
-(@HtDD main)
+(@HtDF main)
 ;; State -> State
 ;; main function for game, start with (main "not-started")
 ;<no tests for main functions>
@@ -69,9 +69,11 @@
              (+ s 1))]))
 
 
+(@HtDF render)
 ;; State -> Image
 ;; render the state, with press to start message or the number
-(check-expect (render "not-started") (text "Press space bar to start." 20 "black"))
+(check-expect (render "not-started")
+              (text "Press space bar to start." 20 "black"))
 (check-expect (render 1) (text "1" 20 "black"))
 
 ;(define (render s) empty-image)
