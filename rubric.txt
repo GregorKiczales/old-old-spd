@@ -1,19 +1,19 @@
 
 This file is https://github.com/GregorKiczales/spd/blob/master/rubric.txt.
 
-Files that don't at least run get 0 marks.  Files that run, but
-have failing tests are assessed according to the following rubric.
-This means that if you have a test that causes an error you should
-comment it out. If you have a test that fails, and you believe the
-test itself is correct, you are better off to leave it in.
+Files that don't at least run get 0 marks.  Files that run, but have
+failing tests are assessed according to the following rubric.  This
+means that if you have a test that causes an error you should comment
+it out. If you have a test that fails, and you believe the test itself
+is correct, you are better off to leave it in.
 
 Note that in any given assigment we may choose to assess only some
 parts of the rubric.  This especially happens later in the term, where
-we might focus on just the origin of template, definition and correctness
-elements of the HtDF rubric for a function. This happens because once
-the functions become difficult enough to design, we will know that if
-your function works properly, you will almost certainly have followed
-the design recipe. 
+we might focus on just the origin of template, definition and
+correctness elements of the HtDF rubric for a function. This happens
+because once the functions become difficult enough to design, we will
+know that if your function works properly, you will almost certainly
+have followed the design recipe.
 
 In all the sub-sections below stop grading at the first line that
 fails. So a signature that is not well formed gets 0, even if it has
@@ -22,7 +22,7 @@ rubric explicitly mentions.
 
 *** HtDF ***
 
-/24
+/23
 
 Signature:
   1 well formed (at least one arg type, ->, and one result type)
@@ -38,6 +38,8 @@ Stub:
   1 well formed (well formed function def'n, one semi comment)
   2  + number of arguments matches signature
   3  + result type matches signature
+  Note: If the stub has typos such that the tests can't run against
+        then award 0 total for stub.
 
 Tests:
   1 well formed (correct name, # args matches signature, base case first...)
@@ -55,12 +57,11 @@ Definition:
   3  + ... completely filled in
 
 Correctness:
-  1 all handin file tests pass
-  2  + at least one supplemental test passes
-  3  + all supplemental tests pass
+  1 all tests are correct
+  2 + all tests pass
 
 Style:
-  1 All names (function, types) match naming convention
+  1 all names (all functions, all types) match naming conventions
   2  + indentation matches convention and CMD-I doesn't move anything
   3  + commenting (number of semis, placement, line length) and
        line breaking matches convention (no dangling ")" etc.)
@@ -100,5 +101,11 @@ Style:
        line breaking matches convention (no dangling ")" etc.)
 
 
-HTDW MAIN, SIGNATURES ON SIDE OF BIG-BANG
+*** HtDW ***
+
+Constants:
+  1 Present and identified with header.
+  2 + Most domain constants identified
+  3 + No magic constants (numbers) appear in rest of program.
+      (Note to graders: String externalization not required.)
 

@@ -1,14 +1,14 @@
 #lang racket
-(require (for-syntax racket/base syntax/parse racket/list))
+(require (for-syntax racket/base syntax/parse racket/list racket/function))
 
-;; Syntax for @tags including basic syntax checking.
+;; Syntax for @tags.
 ;;
-;; @tags are checked for well-formedness and referenced functions being defined
-;; during syntax expansion, they expand to just (values) so that they don't
+;; @tags are checked for well-formedness and some reference checks during
+;; syntax expansion, they expand to just (values) so that they don't
 ;; affect what values are printed when student code is run.
 ;; 
-;; The file structure parser pulls apart the syntax later, knowing they
-;; have met minimal syntactic checking.
+;; The file structure parser pulls apart the syntax later, knowing the
+;; tags are are well-formed.
 
 (provide @Problem
 
@@ -20,8 +20,8 @@
          @template)
 
 
-(define PRIMITIVE-TYPES
-  '(Number Integer Natural String Boolean Image
+(define-for-syntax PRIMITIVE-TYPES
+  '(Number Integer Natural String Boolean Image Color Scene
            KeyEvent MouseEvent
            1String))
 
@@ -41,8 +41,8 @@
 (define-for-syntax DD-TEMPLATE-RULES
   '(atomic-non-distinct atomic-distinct one-of compound self-ref ref))
 
-
-(define-for-syntax PROBLEMS empty) ;(listof Natural), could be more later
+(define-for-syntax TAGS empty)     ;(listof Syntax)  built in expansion phase 0
+(define-for-syntax PROBLEMS empty) ;(listof Natural) built in expansion phase 1
 
 
 ;; Sets up 2 phase expansion.  First phase is basic syntax, second phase checks
@@ -55,19 +55,19 @@
            (raise-syntax-error #f (format "Found ~a that is not at top level" 'tag) stx))         
          (syntax-case stx ()
            [(_)        (raise-syntax-error #f (format "expected ~a ~a after ~a" arity-string kind-string 'tag) stx)]
-           [(_ . id) #'(#%expression (checker . id))]
+           [(_ . id)   (set! TAGS (cons stx TAGS)) #'(#%expression (checker . id))]
            [_          (raise-syntax-error #f (format "expected an open parenthesis before ~a" 'tag) stx)]))]))
                                              
 
-(define-@Tag-syntax @Problem                    "one" "integer greater than 0"    check-problem-number)
-(define-@Tag-syntax @HtDF              "at least one" "function name"             check-defined-functions)
-(define-@Tag-syntax @HtDD              "at least one" "type name"                 check-defined-types)
-(define-@Tag-syntax @HtDW                       "one" "type name"                 check-defined-types) ;!!! restrict arity
-(define-@Tag-syntax @template          "at least one" "template origin"           check-template-origins)
+(define-@Tag-syntax @Problem                    "one" "integer greater than 0"    check-problem)
+(define-@Tag-syntax @HtDF              "at least one" "function name"             check-htdf)
+(define-@Tag-syntax @HtDD              "at least one" "type name"                 check-htdd)
+(define-@Tag-syntax @HtDW                       "one" "type name"                 check-htdw) 
+(define-@Tag-syntax @template          "at least one" "template origin"           check-template)
 (define-@Tag-syntax @dd-template-rules "at least one" "data driven template rule" check-dd-template-rules)
 
 
-(define-syntax (check-problem-number stx)
+(define-syntax (check-problem stx)
   (syntax-case stx ()
     [(_ ns)
      (let ([n (syntax-e #'ns)])
@@ -82,14 +82,14 @@
              [(not (= n (add1 (first PROBLEMS))))
               (raise-syntax-error '@Problem
                                   (format "previous @Problem tag is number ~a, expected this one to be number ~a"
-                                                    (first PROBLEMS)
-                                                    (add1 (first PROBLEMS)))
+                                          (first PROBLEMS)
+                                          (add1 (first PROBLEMS)))
                                   stx
                                   #'ns)])
        (set! PROBLEMS (cons n PROBLEMS))
        #'(values))]))
 
-(define-syntax (check-defined-functions stx)    
+(define-syntax (check-htdf stx)    
   (syntax-case stx ()
     [(_ i ...)
      (for ([id-stx (syntax-e #'(i ...))])
@@ -101,31 +101,50 @@
 
      #'(values)]))
 
-(define-syntax (check-defined-types stx)    
+(define-syntax (check-htdd stx)    
   (syntax-case stx ()
     [(_ i ...)
      (for ([id-stx (syntax-e #'(i ...))])
           (let ([id (syntax-e id-stx)])
             (cond [(not (symbol? id))
                    (raise-syntax-error '@HtDD (format "~a is not a type name" id) stx id-stx)]
-                  ;[(not (identifier-binding id-stx 0 #t))
-                  ; (raise-syntax-error id "this function is not defined" stx id-stx)]
+                  [(and (not (member id PRIMITIVE-TYPES))
+                        (not (lookup-HtDD id)))
+                   (raise-syntax-error '@HtDD (format "~A is not a primitive type and also cannot find @HtDD definition for it" id) stx id-stx)]
                   )))
 
      #'(values)]))
 
-(define-syntax (check-template-origins stx)    
+(define-syntax (check-htdw stx)    
+  (syntax-case stx ()
+    [(_ id-stx)
+     (let ([id (syntax-e #'id-stx)])
+       (cond [(not (symbol? id))
+              (raise-syntax-error '@HtDW (format "~a is not a type name" id) stx #'id-stx)]
+             [(and (not (member id PRIMITIVE-TYPES))
+                   (not (lookup-HtDD id)))
+              (raise-syntax-error '@HtDW (format "~A is not a primitive type and also cannot find @HtDD definition for it" id) stx #'id-stx)]))
+
+     #'(values)]))
+
+(define-syntax (check-template stx)    
   (syntax-case stx ()
     [(_ i ...)
      (for ([id-stx (syntax-e #'(i ...))])
           (let ([id (syntax-e id-stx)])
             (cond [(not (symbol? id))
                    (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." id TEMPLATE-ORIGINS) stx id-stx)]
-                  ;[(not (identifier-binding id-stx 0 #t))
-                  ; (raise-syntax-error id "this function is not defined" stx id-stx)]
-                  )))
+                  [(char-lower-case? (string-ref (symbol->string id) 0))  ;report error based on what it looks like it was trying to be
+                   (when (not (member id TEMPLATE-ORIGINS))
+                     (raise-syntax-error '@template
+                                       (format "~a is neither a legal type name nor one of ~s" id TEMPLATE-ORIGINS) stx id-stx))]
+                  [else
+                   (when (and (not (member id PRIMITIVE-TYPES))
+                              (not (lookup-HtDD id)))
+                     (raise-syntax-error '@template
+                                         (format "~a is not a primitive type, and also cannot find an @HtDD tag for it" id) stx id-stx))])))
 
-     #'(values)]))     
+     #'(values)]))
 
 (define-syntax (check-dd-template-rules stx)    
   (syntax-case stx ()
@@ -137,6 +156,16 @@
 
      #'(values)]))
 
+(define-for-syntax (lookup-HtDD id) 
+  (let loop ([tags TAGS])
+    (if (empty? tags)
+        #f
+        (let* ([t (first tags)]
+               [d (syntax->datum t)])
+          (if (and (eqv? (first d) '@HtDD)
+                   (eqv? (second d) id))
+              t
+              (loop (rest tags)))))))
 
 (define-for-syntax (format-list l or?)
   (cond [(empty? (rest l))

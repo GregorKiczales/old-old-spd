@@ -13,7 +13,7 @@
 (check-expect (distance 3 4) 5)
 (check-within (distance 1 1) (sqrt 2) .00001)
 
-;; @template(primitive, additional-parameter)
+(@template Number add-param)
 (define (distance x y)
   (sqrt (+ (sqr x) (sqr y))))
 
