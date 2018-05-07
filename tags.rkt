@@ -163,7 +163,7 @@
         (let* ([t (first tags)]
                [d (syntax->datum t)])
           (if (and (eqv? (first d) '@HtDD)
-                   (eqv? (second d) id))
+                   (member id (rest d)))
               t
               (loop (rest tags)))))))
 
