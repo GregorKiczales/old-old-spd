@@ -134,15 +134,15 @@
           (let ([id (syntax-e id-stx)])
             (cond [(not (symbol? id))
                    (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." id TEMPLATE-ORIGINS) stx id-stx)]
-                  [(char-lower-case? (string-ref (symbol->string id) 0))
-                   (when (not (member id TEMPLATE-ORIGINS))
-                     (raise-syntax-error '@template
-                                       (format "~a is neither a legal type name nor one of ~s" id TEMPLATE-ORIGINS) stx id-stx))]
-                  [else
+                  [(char-upper-case? (string-ref (symbol->string id) 0))
                    (when (and (not (member id PRIMITIVE-TYPES))
                               (not (lookup-HtDD id)))
                      (raise-syntax-error '@template
-                                         (format "~a is not a primitive type, and also cannot find an @HtDD tag for it" id) stx id-stx))])))
+                                         (format "~a is not a primitive type, and also cannot find an @HtDD tag for it" id) stx id-stx))]
+                  [else
+                   (when (not (member id TEMPLATE-ORIGINS))
+                     (raise-syntax-error '@template
+                                       (format "~a is neither a legal type name nor one of ~s" id TEMPLATE-ORIGINS) stx id-stx))])))
 
      #'(values)]))
 
