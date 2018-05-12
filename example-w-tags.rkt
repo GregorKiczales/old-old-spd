@@ -6,20 +6,22 @@
 (require 2htdp/image)
 
 
-(@Problem 1)
-(@HtDF distance)
+(@Problem 1)       ;from here to next @Problem is problem 1
+(@HtDF distance)   ;HtDF design immediately follows (n-ary tag)
 ;; Number Number -> Number   
 ;; Produce cartesian distance from origin (0,0) to given (x,y).
 (check-expect (distance 3 4) 5)
 (check-within (distance 1 1) (sqrt 2) .00001)
 
-(@template Number add-param)
+(@template Number add-param bin-tree)
 (define (distance x y)
   (sqrt (+ (sqr x) (sqr y))))
 
 
 (@Problem 2)
 (@HtDW State)
+
+;; Constants
 
 (define STATE-MIN 0)
 (define STATE-MAX 10)
@@ -45,7 +47,6 @@
 ;; main function for game, start with (main "not-started")
 ;<no tests for main functions>
 
-(@template htdw-main)
 (define (main ws)
   (big-bang ws
     (on-tick tock)      ;State -> State

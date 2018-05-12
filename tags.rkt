@@ -10,13 +10,13 @@
 ;; The file structure parser pulls apart the syntax later, knowing the
 ;; tags are are well-formed.
 
-(provide @Problem
+(provide @Problem 
 
-         @HtDW
-         @HtDD
-         @HtDF
+         @HtDW      
+         @HtDD      
+         @HtDF      
           
-         @dd-template-rules
+         @dd-template-rules 
          @template)
 
 
@@ -24,6 +24,9 @@
   '(Number Integer Natural String Boolean Image Color Scene
            KeyEvent MouseEvent
            1String))
+
+(define-for-syntax DD-TEMPLATE-RULES
+  '(atomic-non-distinct atomic-distinct one-of compound self-ref ref))
 
 (define-for-syntax TEMPLATE-ORIGINS
   '(;<TypeName>      decomposition and possible structural recursion
@@ -35,11 +38,10 @@
     encapsulated
     use-abstract-fn
     genrec
+    bin-tree         ;should be used w/ genrec
+    arb-tree         ;should be used w/ genrec
     accumulator
     for-each))
-
-(define-for-syntax DD-TEMPLATE-RULES
-  '(atomic-non-distinct atomic-distinct one-of compound self-ref ref))
 
 (define-for-syntax TAGS empty)     ;(listof Syntax)  built in expansion phase 0
 (define-for-syntax PROBLEMS empty) ;(listof Natural) built in expansion phase 1
@@ -130,20 +132,24 @@
 (define-syntax (check-template stx)    
   (syntax-case stx ()
     [(_ i ...)
-     (for ([id-stx (syntax-e #'(i ...))])
-          (let ([id (syntax-e id-stx)])
-            (cond [(not (symbol? id))
-                   (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." id TEMPLATE-ORIGINS) stx id-stx)]
-                  [(char-upper-case? (string-ref (symbol->string id) 0))
-                   (when (and (not (member id PRIMITIVE-TYPES))
-                              (not (lookup-HtDD id)))
-                     (raise-syntax-error '@template
-                                         (format "~a is not a primitive type, and also cannot find an @HtDD tag for it" id) stx id-stx))]
-                  [else
-                   (when (not (member id TEMPLATE-ORIGINS))
-                     (raise-syntax-error '@template
-                                       (format "~a is neither a legal type name nor one of ~s" id TEMPLATE-ORIGINS) stx id-stx))])))
-
+     (let* ([id-stxs (syntax-e #'(i ...))]
+            [ids     (map syntax-e id-stxs)])
+       (for ([id-stx id-stxs]
+             [id     ids])
+            (when (not (symbol? id))
+              (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." id TEMPLATE-ORIGINS) stx id-stx))
+            (if (char-upper-case? (string-ref (symbol->string id) 0))
+                (when (and (not (member id PRIMITIVE-TYPES))
+                           (not (lookup-HtDD id)))
+                  (raise-syntax-error '@template
+                                      (format "~a is not a primitive type, and also cannot find an @HtDD tag for it" id) stx id-stx))
+                (when (not (member id TEMPLATE-ORIGINS))
+                  (raise-syntax-error '@template
+                                      (format "~a is neither a legal type name nor one of ~s" id TEMPLATE-ORIGINS) stx id-stx)))
+            (when (and (member id '(bin-tree arb-tree))
+                       (not (member 'genrec ids)))
+              (raise-syntax-error '@template
+                                  (format "when ~a is used as template origin, the 'genrec' origin should also be used" id) stx id-stx))))     
      #'(values)]))
 
 (define-syntax (check-dd-template-rules stx)    

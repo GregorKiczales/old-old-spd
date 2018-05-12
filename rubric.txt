@@ -1,24 +1,31 @@
 
 This file is https://github.com/GregorKiczales/spd/blob/master/rubric.txt.
 
-Files that don't at least run get 0 marks.  Files that run, but have
-failing tests are assessed according to the following rubric.  This
-means that if you have a test that causes an error you should comment
-it out. If you have a test that fails, and you believe the test itself
-is correct, you are better off to leave it in.
+In any given assigment we may choose to assess only some parts of the
+rubric.  This especially happens later in the term, where we might
+focus on just the origin of template, definition and correctness
+elements of the HtDF rubric for a function. This happens because once
+the functions become difficult enough to design, we will know that if
+your function works properly, you will almost certainly have followed
+the design recipe.
 
-Note that in any given assigment we may choose to assess only some
-parts of the rubric.  This especially happens later in the term, where
-we might focus on just the origin of template, definition and
-correctness elements of the HtDF rubric for a function. This happens
-because once the functions become difficult enough to design, we will
-know that if your function works properly, you will almost certainly
-have followed the design recipe.
+*** Commit Ready ***
+
+Files must run without errors. Files that get errors when they run get
+0 marks.  Files that run without errors, but have failing tests are
+assessed according to the following rubric.  This means that if you
+have a test that causes an error you should comment it out. If you
+have a test that fails, and you believe the test itself is correct,
+you are better off to leave it in.
+
+Files that have top level expressions, like calls to main, or calls to
+other functions get a 25% deduction off the top.
 
 In all the sub-sections below stop grading at the first line that
 fails. So a signature that is not well formed gets 0, even if it has
 some correct types.  No partial credit is awarded other than what the
 rubric explicitly mentions.
+
 
 *** HtDF ***
 
@@ -26,8 +33,8 @@ rubric explicitly mentions.
 
 Signature:
   1 well formed (at least one arg type, ->, and one result type)
-  2  + arguments (correct number and types)
-  3  + result (correct type)
+  + 1 arguments (correct number and types)
+  + 1 result (correct type)
 
 Purpose:
   1 well formed (two ;;, <space>, <= 80 chars) 
@@ -37,7 +44,7 @@ Purpose:
 Stub:
   1 well formed (well formed function def'n, one semi comment)
   2  + number of arguments matches signature
-  3  + result type matches signature
+  3  + result type matches signature, and body expression is simple (stub vs. real function)
   Note: If the stub has typos such that the tests can't run against
         then award 0 total for stub.
 
@@ -108,4 +115,19 @@ Constants:
   2 + Most domain constants identified
   3 + No magic constants (numbers) appear in rest of program.
       (Note to graders: String externalization not required.)
+
+Changing information:
+  1 World state data definition is present and clearly identified
+  2 + Changing information is correctly identified
+  (correctness of DD is assesed in the HtDD rubric)
+
+Big-bang-options:
+  1 at least one correct option
+  2 + all correct options and no others
+
+main function:
+  follow @HtDF, but template is not apparent if the type names
+  in the helper function signatures have not been updated
+
+rest of grading is through @HtDF rubric for each handler
 
