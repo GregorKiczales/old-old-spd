@@ -3,7 +3,7 @@
 #reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname example-w-tags) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #t)))
 (require spd/tags)
 (require 2htdp/universe)
-(require 2htdp/image)
+(require 2htdp/image) 
 
 
 (@Problem 1)       ;from here to next @Problem is problem 1

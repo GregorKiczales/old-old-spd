@@ -4,7 +4,7 @@
 ;; Syntax for @tags.
 ;;
 ;; @tags are checked for well-formedness and some reference checks during
-;; syntax expansion, they expand to just (values) so that they don't
+;; syntax expansion, they expand to just (void) so that they don't
 ;; affect what values are printed when student code is run.
 ;; 
 ;; The file structure parser pulls apart the syntax later, knowing the
@@ -89,7 +89,7 @@
                                   stx
                                   #'ns)])
        (set! PROBLEMS (cons n PROBLEMS))
-       #'(values))]))
+       #'(void))]))
 
 (define-syntax (check-htdf stx)    
   (syntax-case stx ()
@@ -101,7 +101,7 @@
                   [(not (identifier-binding id-stx 0 #t))
                    (raise-syntax-error id "this function is not defined" stx id-stx)])))
 
-     #'(values)]))
+     #'(void)]))
 
 (define-syntax (check-htdd stx)    
   (syntax-case stx ()
@@ -115,7 +115,7 @@
                    (raise-syntax-error '@HtDD (format "~A is not a primitive type and also cannot find @HtDD definition for it" id) stx id-stx)]
                   )))
 
-     #'(values)]))
+     #'(void)]))
 
 (define-syntax (check-htdw stx)    
   (syntax-case stx ()
@@ -127,7 +127,7 @@
                    (not (lookup-HtDD id)))
               (raise-syntax-error '@HtDW (format "~A is not a primitive type and also cannot find @HtDD definition for it" id) stx #'id-stx)]))
 
-     #'(values)]))
+     #'(void)]))
 
 (define-syntax (check-template stx)    
   (syntax-case stx ()
@@ -150,7 +150,7 @@
                        (not (member 'genrec ids)))
               (raise-syntax-error '@template
                                   (format "when ~a is used as template origin, the 'genrec' origin should also be used" id) stx id-stx))))     
-     #'(values)]))
+     #'(void)]))
 
 (define-syntax (check-dd-template-rules stx)    
   (syntax-case stx ()
@@ -160,7 +160,7 @@
             (cond [(not (member id DD-TEMPLATE-RULES))
                    (raise-syntax-error '@dd-template-rules (format "~a is not one of ~a" id (format-list DD-TEMPLATE-RULES #t)) stx id-stx)])))
 
-     #'(values)]))
+     #'(void)]))
 
 (define-for-syntax (lookup-HtDD id) 
   (let loop ([tags TAGS])
