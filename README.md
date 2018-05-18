@@ -22,12 +22,25 @@ The following tags are currently in use:
 * [(@Problem n)](@Problem-n)
 * [(@HtDF fn-name-1 fn-name-2..)](@HtDF-fn-name-1-fn-name-2...)
 * [(@HtDD TypeName1 TypeName2..)](@HtDD-TypeName1-TypeName2..)
+* [(@HtDW TypeName)](@HtDW-TypeName)
+* [(@dd-template-rules r1 r2..)]((@dd-template-rules-r1-r2..))
+* [(@template s1 s2..)]((@template-s1-s2..))
 
 ### (@Problem n)
 
-### (@HtDF fn-name-1 fn-name-2...)
+**Restrictions:** n>=1, first `(@Problem ...)` tag in a file must have arity 1. Other follow in sequence.
 
-### (@HtDD TypeName1 TypeName2..)
+### (@HtDF fn-name-1 fn-name-2...fn-name-n)
+
+### (@HtDD TypeName1 TypeName2...TypeNameN)
+
+### (@HtDW TypeName)
+
+### (@dd-template-rules r1 r2...rN)
+
+### (@template s1 s2...sN)
+
+
 
 ## Glossary
 
