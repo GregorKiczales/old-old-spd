@@ -33,8 +33,8 @@ rubric explicitly mentions.
 
 Signature:
   1 well formed (at least one arg type, ->, and one result type)
-  + 1 arguments (correct number and types)
-  + 1 result (correct type)
+  2  + correct argument number and types
+  3  + correct result type
 
 Purpose:
   1 well formed (two ;;, <space>, <= 80 chars) 
@@ -69,7 +69,7 @@ Correctness:
 
 Style:
   1 all names (all functions, all types) match naming conventions
-  2  + indentation matches convention and CMD-I doesn't move anything
+  2  + indentation matches convention and CMD-I/Ctrl-I doesn't move anything
   3  + commenting (number of semis, placement, line length) and
        line breaking matches convention (no dangling ")" etc.)
 
@@ -90,8 +90,8 @@ Interpretation:
 
 Examples (N/A for enumerations):
   1 present and well formed
-  2 covers simple cases
-  3 covers corner cases
+  2  + covers simple cases
+  3  + covers corner cases
 
 (remember that data examples are intended to explain the representation,
  they do not have to support function testing)
@@ -109,6 +109,8 @@ Style:
 
 
 *** HtDW ***
+
+/7 + HtDF + HtDD
 
 Constants:
   1 Present and identified with header.
@@ -129,5 +131,5 @@ main function:
   follow @HtDF, but template is not apparent if the type names
   in the helper function signatures have not been updated
 
-rest of grading is through @HtDF rubric for each handler
-
+rest of grading is through HtDF rubric for each handler
+  and the HtDD rubric for the WorldState DD
