@@ -70,7 +70,7 @@ Correctness:
 Style:
   1 all names (all functions, all types) match naming conventions
   2  + indentation matches convention and CMD-I/Ctrl-I doesn't move anything
-  3  + commenting (number of semis, placement, line length) and
+  3  + commenting (number of semis, placement), line length, and
        line breaking matches convention (no dangling ")" etc.)
 
 *** HtDD ***
@@ -110,7 +110,7 @@ Style:
 
 *** HtDW ***
 
-/7 + HtDF + HtDD
+/7 + /17 + HtDF + HtDD
 
 Constants:
   1 Present and identified with header.
@@ -127,9 +127,10 @@ Big-bang-options:
   1 at least one correct option
   2 + all correct options and no others
 
-main function:
+main function: /17
   follow @HtDF, but template is not apparent if the type names
   in the helper function signatures have not been updated
+  Do not mark for stub or tests.
 
 rest of grading is through HtDF rubric for each handler
   and the HtDD rubric for the WorldState DD
