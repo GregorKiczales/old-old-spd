@@ -125,13 +125,12 @@
 
 (define-syntax (check-htdw stx)    
   (syntax-case stx ()
-    [(_ id-stx)
-     (let ([id (syntax-e #'id-stx)])
-       (cond [(not (symbol? id))
-              (raise-syntax-error '@HtDW (format "~a is not a type name" id) stx #'id-stx)]
-             [(and (not (member id PRIMITIVE-TYPES))
-                   (not (lookup-HtDD id)))
-              (raise-syntax-error '@HtDW (format "~A is not a primitive type and also cannot find @HtDD definition for it" id) stx #'id-stx)]))
+    [(_ stx)
+     (let ([type (syntax->datum #'stx)])
+       (cond [(looks-like-type-name? type)
+              (check-type '@HtDW #'stx type)]
+             [else
+              (raise-syntax-error '@HtDW (format "~a is not a type name" type) #'stx #'stx)]))
 
      (stepper-void)]))
 
@@ -142,22 +141,27 @@
             [ts     (map syntax->datum t-stxs)])
        (for ([stx  t-stxs]
              [type ts])
-            (when (not (type-name? type))
-              (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." type TEMPLATE-ORIGINS) stx stx))
-            (let ([type (strip-listof type)])
-              (if (char-upper-case? (string-ref (symbol->string type) 0))
-                  (when (and (not (member type PRIMITIVE-TYPES))
-                             (not (lookup-HtDD type)))
+            (cond [(looks-like-type-name? type) (check-type '@template stx type)]
+                  [(symbol? type)
+                   (when (not (member type TEMPLATE-ORIGINS))
                     (raise-syntax-error '@template
-                                        (format "~a is not a primitive type, and also cannot find an @HtDD tag for it" type) stx stx))
-              (when (not (member type TEMPLATE-ORIGINS))
-                (raise-syntax-error '@template
-                                    (format "~a is neither a legal type name nor one of ~s" type (format-list TEMPLATE-ORIGINS)) stx stx)))
-            (when (and (member type '(bin-tree arb-tree))
-                       (not (member 'genrec ts)))
-              (raise-syntax-error '@template
-                                  (format "when ~a is used as template origin, the 'genrec' origin should also be used" type) stx stx)))))
+                                        (format "~a is neither a legal type name nor one of ~s" type (format-list TEMPLATE-ORIGINS)) stx stx))
+                   (when (and (member type '(bin-tree arb-tree))
+                              (not (member 'genrec ts)))
+                     (raise-syntax-error '@template
+                                         (format "using ~a requires also using genrec" stx stx)))]
+                  [else
+                   (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." type TEMPLATE-ORIGINS) stx stx)])))
      (stepper-void)]))
+
+
+(define-for-syntax (check-type who stx type)
+  (let ([type (strip-listof type)])
+    (when (and (not (member type PRIMITIVE-TYPES))
+               (not (lookup-HtDD type)))
+        (raise-syntax-error who
+                            (format "~a is not a primitive type, and also cannot find an @HtDD tag for it" type)
+                            stx stx))))
 
 (define-syntax (check-dd-template-rules stx)    
   (syntax-case stx ()
@@ -186,16 +190,14 @@
         [else
          (format "~a, ~a" (first l) (format-list (rest l) or?))]))
 
-(define-for-syntax (type-name? x)
-  (or (symbol? x)
+(define-for-syntax (looks-like-type-name? x)
+  (or (and (symbol? x) (char-upper-case? (string-ref (symbol->string x) 0)))
       (and (list? x)
            (= (length x) 2)
-           (eqv? (first x) 'listof)
-           (symbol? (second x)))))
+           (eqv? (first x) 'listof))))
 
 (define-for-syntax (strip-listof t)
   (if (symbol? t) t (second t)))
                    
-
 
 
