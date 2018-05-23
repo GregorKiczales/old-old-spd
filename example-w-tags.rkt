@@ -21,6 +21,8 @@
 (@Problem 2)
 (@HtDW State)
 
+(@template (listof Stat))
+
 ;; Constants
 
 (define STATE-MIN 0)

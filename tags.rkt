@@ -1,5 +1,6 @@
 #lang racket
-(require (for-syntax racket/base syntax/parse racket/list racket/function))
+(require (for-syntax racket/base syntax/parse racket/list racket/function
+                     stepper/private/syntax-property))
 
 ;; Syntax for @tags.
 ;;
@@ -47,6 +48,11 @@
 (define-for-syntax PROBLEMS empty) ;(listof Natural) built in expansion phase 1
 
 
+(define-for-syntax (stepper-void)  
+  (with-stepper-syntax-properties (['stepper-skip-completely #t])
+                                  #'(void)))
+
+
 ;; Sets up 2 phase expansion.  First phase is basic syntax, second phase checks
 ;; that referenced functions are bound, problem numbers aren't duplicated etc.
 (define-syntax (define-@Tag-syntax stx)
@@ -57,7 +63,7 @@
            (raise-syntax-error #f (format "Found ~a that is not at top level" 'tag) stx))         
          (syntax-case stx ()
            [(_)        (raise-syntax-error #f (format "expected ~a ~a after ~a" arity-string kind-string 'tag) stx)]
-           [(_ . id)   (set! TAGS (cons stx TAGS)) #'(#%expression (checker . id))]
+           [(_ . id)   (set! TAGS (cons stx TAGS)) (with-stepper-syntax-properties (['stepper-skip-completely #t]) #'(#%expression (checker . id)))]
            [_          (raise-syntax-error #f (format "expected an open parenthesis before ~a" 'tag) stx)]))]))
                                              
 
@@ -89,7 +95,7 @@
                                   stx
                                   #'ns)])
        (set! PROBLEMS (cons n PROBLEMS))
-       #'(void))]))
+       (stepper-void))]))
 
 (define-syntax (check-htdf stx)    
   (syntax-case stx ()
@@ -101,7 +107,7 @@
                   [(not (identifier-binding id-stx 0 #t))
                    (raise-syntax-error id "this function is not defined" stx id-stx)])))
 
-     #'(void)]))
+     (stepper-void)]))
 
 (define-syntax (check-htdd stx)    
   (syntax-case stx ()
@@ -115,7 +121,7 @@
                    (raise-syntax-error '@HtDD (format "~A is not a primitive type and also cannot find @HtDD definition for it" id) stx id-stx)]
                   )))
 
-     #'(void)]))
+     (stepper-void)]))
 
 (define-syntax (check-htdw stx)    
   (syntax-case stx ()
@@ -127,30 +133,31 @@
                    (not (lookup-HtDD id)))
               (raise-syntax-error '@HtDW (format "~A is not a primitive type and also cannot find @HtDD definition for it" id) stx #'id-stx)]))
 
-     #'(void)]))
+     (stepper-void)]))
 
 (define-syntax (check-template stx)    
   (syntax-case stx ()
-    [(_ i ...)
-     (let* ([id-stxs (syntax-e #'(i ...))]
-            [ids     (map syntax-e id-stxs)])
-       (for ([id-stx id-stxs]
-             [id     ids])
-            (when (not (symbol? id))
-              (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." id TEMPLATE-ORIGINS) stx id-stx))
-            (if (char-upper-case? (string-ref (symbol->string id) 0))
-                (when (and (not (member id PRIMITIVE-TYPES))
-                           (not (lookup-HtDD id)))
-                  (raise-syntax-error '@template
-                                      (format "~a is not a primitive type, and also cannot find an @HtDD tag for it" id) stx id-stx))
-                (when (not (member id TEMPLATE-ORIGINS))
-                  (raise-syntax-error '@template
-                                      (format "~a is neither a legal type name nor one of ~s" id TEMPLATE-ORIGINS) stx id-stx)))
-            (when (and (member id '(bin-tree arb-tree))
-                       (not (member 'genrec ids)))
+    [(_ t ...)
+     (let* ([t-stxs (syntax-e #'(t ...))]
+            [ts     (map syntax->datum t-stxs)])
+       (for ([stx  t-stxs]
+             [type ts])
+            (when (not (type-name? type))
+              (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." type TEMPLATE-ORIGINS) stx stx))
+            (let ([type (strip-listof type)])
+              (if (char-upper-case? (string-ref (symbol->string type) 0))
+                  (when (and (not (member type PRIMITIVE-TYPES))
+                             (not (lookup-HtDD type)))
+                    (raise-syntax-error '@template
+                                        (format "~a is not a primitive type, and also cannot find an @HtDD tag for it" type) stx stx))
+              (when (not (member type TEMPLATE-ORIGINS))
+                (raise-syntax-error '@template
+                                    (format "~a is neither a legal type name nor one of ~s" type (format-list TEMPLATE-ORIGINS)) stx stx)))
+            (when (and (member type '(bin-tree arb-tree))
+                       (not (member 'genrec ts)))
               (raise-syntax-error '@template
-                                  (format "when ~a is used as template origin, the 'genrec' origin should also be used" id) stx id-stx))))     
-     #'(void)]))
+                                  (format "when ~a is used as template origin, the 'genrec' origin should also be used" type) stx stx)))))
+     (stepper-void)]))
 
 (define-syntax (check-dd-template-rules stx)    
   (syntax-case stx ()
@@ -160,7 +167,7 @@
             (cond [(not (member id DD-TEMPLATE-RULES))
                    (raise-syntax-error '@dd-template-rules (format "~a is not one of ~a" id (format-list DD-TEMPLATE-RULES #t)) stx id-stx)])))
 
-     #'(void)]))
+     (stepper-void)]))
 
 (define-for-syntax (lookup-HtDD id) 
   (let loop ([tags TAGS])
@@ -178,6 +185,17 @@
          (format "~a ~a" (if or? "or" "and") (first l))]
         [else
          (format "~a, ~a" (first l) (format-list (rest l) or?))]))
+
+(define-for-syntax (type-name? x)
+  (or (symbol? x)
+      (and (list? x)
+           (= (length x) 2)
+           (eqv? (first x) 'listof)
+           (symbol? (second x)))))
+
+(define-for-syntax (strip-listof t)
+  (if (symbol? t) t (second t)))
+                   
 
 
 
