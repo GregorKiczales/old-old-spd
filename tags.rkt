@@ -145,7 +145,7 @@
                   [(symbol? type)
                    (when (not (member type TEMPLATE-ORIGINS))
                     (raise-syntax-error '@template
-                                        (format "~a is neither a legal type name nor one of ~s" type (format-list TEMPLATE-ORIGINS)) stx stx))
+                                        (format "~a is neither a legal type name nor one of ~s" type (format-list TEMPLATE-ORIGINS #t)) stx stx))
                    (when (and (member type '(bin-tree arb-tree))
                               (not (member 'genrec ts)))
                      (raise-syntax-error '@template
