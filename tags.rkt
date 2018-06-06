@@ -145,7 +145,7 @@
                   [(symbol? type)
                    (when (not (member type TEMPLATE-ORIGINS))
                     (raise-syntax-error '@template
-                                        (format "~a is neither a legal type name nor one of ~s" type (format-list TEMPLATE-ORIGINS #t)) stx stx))
+                                        (format "~a is neither a legal type name, (listof TypeName), nor one of ~s" type (format-list TEMPLATE-ORIGINS #t)) stx stx))
                    (when (and (member type '(bin-tree arb-tree))
                               (not (member 'genrec ts)))
                      (raise-syntax-error '@template
@@ -196,8 +196,9 @@
            (= (length x) 2)
            (eqv? (first x) 'listof))))
 
+;; !!! type parameters
 (define-for-syntax (strip-listof t)
-  (if (symbol? t) t (second t)))
+  (if (symbol? t) t (strip-listof (second t))))
                    
 
 
