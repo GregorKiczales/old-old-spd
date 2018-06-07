@@ -5,6 +5,7 @@
 (require 2htdp/universe)
 (require 2htdp/image)
 
+(@template Number (listof Number) (listof (listof X)) X)
 
 (@Problem 1)       ;from here to next @Problem is problem 1
 (@HtDF distance)   ;HtDF design immediately follows (n-ary tag)
