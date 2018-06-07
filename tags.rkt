@@ -156,11 +156,17 @@
 
 
 (define-for-syntax (check-type who stx type)
-  (let ([type (strip-listof type)])
-    (when (and (not (member type PRIMITIVE-TYPES))
-               (not (lookup-HtDD type)))
-        (raise-syntax-error who
-                            (format "~a is not a primitive type, and also cannot find an @HtDD tag for it" type)
+  (if (and (list? type)
+              (= (length type) 2)
+              (eqv? (first type) 'listof))
+         (check-type who stx (second type))
+         (when (and (not (member type PRIMITIVE-TYPES))
+                    (not (lookup-HtDD type))
+                    (not (and (symbol? type)
+                              (= (string-length (symbol->string type)) 1))))
+
+           (raise-syntax-error who
+                            (format "~a is not a primitive type, cannot find an @HtDD tag for it, and it is not a type parameter" type)
                             stx stx))))
 
 (define-syntax (check-dd-template-rules stx)    
@@ -196,8 +202,6 @@
            (= (length x) 2)
            (eqv? (first x) 'listof))))
 
-(define-for-syntax (strip-listof t)
-  (if (symbol? t) t (second t)))
                    
 
 
