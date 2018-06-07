@@ -201,9 +201,6 @@
       (and (list? x)
            (= (length x) 2)
            (eqv? (first x) 'listof))))
-
-(define-for-syntax (strip-listof t)
-  (if (symbol? t) t (strip-listof (second t))))
                    
 
 
