@@ -130,7 +130,7 @@
        (cond [(looks-like-type-name? type)
               (check-type '@HtDW #'stx type)]
              [else
-              (raise-syntax-error '@HtDW (format "~a is not a type name" type) #'stx #'stx)]))
+              (raise-syntax-error '@HtDW (format "~a is not a type name or (listof TypeName)" type) #'stx #'stx)]))
 
      (stepper-void)]))
 
