@@ -149,7 +149,7 @@
                    (when (and (member type '(bin-tree arb-tree))
                               (not (member 'genrec ts)))
                      (raise-syntax-error '@template
-                                         (format "using ~a requires also using genrec" stx stx)))]
+                                         (format "using ~a requires also using genrec" type)))]
                   [else
                    (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." type TEMPLATE-ORIGINS) stx stx)])))
      (stepper-void)]))
