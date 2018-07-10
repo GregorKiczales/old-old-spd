@@ -130,7 +130,7 @@
        (cond [(looks-like-type-name? type)
               (check-type '@HtDW #'stx type)]
              [else
-              (raise-syntax-error '@HtDW (format "~a is not a type name" type) #'stx #'stx)]))
+              (raise-syntax-error '@HtDW (format "~a is not a type name or (listof TypeName)" type) #'stx #'stx)]))
 
      (stepper-void)]))
 
@@ -145,22 +145,28 @@
                   [(symbol? type)
                    (when (not (member type TEMPLATE-ORIGINS))
                     (raise-syntax-error '@template
-                                        (format "~a is neither a legal type name nor one of ~s" type (format-list TEMPLATE-ORIGINS)) stx stx))
+                                        (format "~a is neither a legal type name, (listof TypeName), nor one of ~s" type (format-list TEMPLATE-ORIGINS #t)) stx stx))
                    (when (and (member type '(bin-tree arb-tree))
                               (not (member 'genrec ts)))
                      (raise-syntax-error '@template
-                                         (format "using ~a requires also using genrec" stx stx)))]
+                                         (format "using ~a requires also using genrec" type) stx stx))]
                   [else
                    (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." type TEMPLATE-ORIGINS) stx stx)])))
      (stepper-void)]))
 
 
 (define-for-syntax (check-type who stx type)
-  (let ([type (strip-listof type)])
-    (when (and (not (member type PRIMITIVE-TYPES))
-               (not (lookup-HtDD type)))
-        (raise-syntax-error who
-                            (format "~a is not a primitive type, and also cannot find an @HtDD tag for it" type)
+  (if (and (list? type)
+              (= (length type) 2)
+              (eqv? (first type) 'listof))
+         (check-type who stx (second type))
+         (when (and (not (member type PRIMITIVE-TYPES))
+                    (not (lookup-HtDD type))
+                    (not (and (symbol? type)
+                              (= (string-length (symbol->string type)) 1))))
+
+           (raise-syntax-error who
+                            (format "~a is not a primitive type, cannot find an @HtDD tag for it, and it is not a type parameter" type)
                             stx stx))))
 
 (define-syntax (check-dd-template-rules stx)    
@@ -195,9 +201,6 @@
       (and (list? x)
            (= (length x) 2)
            (eqv? (first x) 'listof))))
-
-(define-for-syntax (strip-listof t)
-  (if (symbol? t) t (second t)))
                    
 
 
