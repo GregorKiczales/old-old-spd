@@ -130,7 +130,7 @@
        (cond [(looks-like-type-name? type)
               (check-type '@HtDW #'stx type)]
              [else
-              (raise-syntax-error '@HtDW (format "~a is not a type name" type) #'stx #'stx)]))
+              (raise-syntax-error '@HtDW (format "~a is not a type name or (listof TypeName)" type) #'stx #'stx)]))
 
      (stepper-void)]))
 
@@ -145,7 +145,7 @@
                   [(symbol? type)
                    (when (not (member type TEMPLATE-ORIGINS))
                     (raise-syntax-error '@template
-                                        (format "~a is neither a legal type name nor one of ~s" type (format-list TEMPLATE-ORIGINS #t)) stx stx))
+                                        (format "~a is neither a legal type name, (listof TypeName), nor one of ~s" type (format-list TEMPLATE-ORIGINS #t)) stx stx))
                    (when (and (member type '(bin-tree arb-tree))
                               (not (member 'genrec ts)))
                      (raise-syntax-error '@template
@@ -201,7 +201,6 @@
       (and (list? x)
            (= (length x) 2)
            (eqv? (first x) 'listof))))
-
                    
 
 
