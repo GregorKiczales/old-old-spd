@@ -70,9 +70,9 @@ Correctness:
 Style:
   1 all names (all functions, all types) match naming conventions
   2  + indentation matches convention and CMD-I/Ctrl-I doesn't move anything
-  3  + commenting (number of semis, placement, line length) and
+  3  + commenting (number of semis, placement), line length, and
        line breaking matches convention (no dangling ")" etc.)
-
+       
 *** HtDD ***
 
 /15
@@ -104,13 +104,14 @@ Template AND rules used:
 Style:
   1 Type, example and template match naming conventions
   2  + indentation matches covention, CMD-I moves nothing
-  3  + commenting (number of semis, placement, line length) and
-       line breaking matches convention (no dangling ")" etc.)
+  3  + commenting (number of semis, placement), line length,
+       line breaking, and spacing matches convention
+       (no dangling ")" etc.)
 
 
 *** HtDW ***
 
-/7 + HtDF + HtDD
+/7 + /17 + HtDF + HtDD
 
 Constants:
   1 Present and identified with header.
@@ -127,9 +128,10 @@ Big-bang-options:
   1 at least one correct option
   2 + all correct options and no others
 
-main function:
+main function: /17
   follow @HtDF, but template is not apparent if the type names
   in the helper function signatures have not been updated
+  Do not mark for stub or tests.
 
 rest of grading is through HtDF rubric for each handler
   and the HtDD rubric for the WorldState DD
