@@ -23,24 +23,24 @@
 
 (define-for-syntax PRIMITIVE-TYPES
   '(Number Integer Natural String Boolean Image Color Scene
-           KeyEvent MouseEvent
-           1String))
+           1String
+           KeyEvent MouseEvent))
 
 (define-for-syntax DD-TEMPLATE-RULES
   '(atomic-non-distinct atomic-distinct one-of compound self-ref ref))
 
 (define-for-syntax TEMPLATE-ORIGINS
   '(;<TypeName>      decomposition and possible structural recursion
-    add-param        ;used once for 1 or more atomic params
+    add-param        ;use once for 1 or more atomic params
     htdw-main    
-    fn-composition   ;used once for composition of 2 or more fns
+    fn-composition   ;use once for composition of 2 or more fns
     backtracking     
     2-one-of
     encapsulated
     use-abstract-fn
     genrec
-    bin-tree         ;should be used w/ genrec
-    arb-tree         ;should be used w/ genrec
+    bin-tree         ;must be used w/ genrec
+    arb-tree         ;must be used w/ genrec
     accumulator
     for-each))
 
@@ -149,7 +149,7 @@
                    (when (and (member type '(bin-tree arb-tree))
                               (not (member 'genrec ts)))
                      (raise-syntax-error '@template
-                                         (format "using ~a requires also using genrec" stx stx)))]
+                                         (format "using ~a requires also using genrec" type) stx stx))]
                   [else
                    (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." type TEMPLATE-ORIGINS) stx stx)])))
      (stepper-void)]))
