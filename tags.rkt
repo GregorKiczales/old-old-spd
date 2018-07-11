@@ -57,7 +57,7 @@
 ;; that referenced functions are bound, problem numbers aren't duplicated etc.
 (define-syntax (define-@Tag-syntax stx)
   (syntax-case stx ()
-    [(_ tag arity-string kind-string checker)     
+    [(_ tag arity-string kind-string checker)  ;!!! rename checkers to expanders   
      #`(define-syntax (tag stx)         
          (unless (member (syntax-local-context) '(module top-level))            
            (raise-syntax-error #f (format "Found ~a that is not at top level" 'tag) stx))         
@@ -145,7 +145,7 @@
                   [(symbol? type)
                    (when (not (member type TEMPLATE-ORIGINS))
                     (raise-syntax-error '@template
-                                        (format "~a is neither a legal type name, (listof TypeName), nor one of ~s" type (format-list TEMPLATE-ORIGINS #t)) stx stx))
+                                        (format "~a is not a legal type name, (listof <TypeName>), or one of ~s" type (format-list TEMPLATE-ORIGINS #t)) stx stx))
                    (when (and (member type '(bin-tree arb-tree))
                               (not (member 'genrec ts)))
                      (raise-syntax-error '@template

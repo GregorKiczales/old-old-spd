@@ -8,7 +8,7 @@
 (@template Number (listof Number) (listof (listof X)) X)
 
 (@Problem 1)       ;from here to next @Problem is problem 1
-(@HtDF distance)   ;HtDF design immediately follows (n-ary tag)
+(@HtDF distance)     
 ;; Number Number -> Number   
 ;; Produce cartesian distance from origin (0,0) to given (x,y).
 (check-expect (distance 3 4) 5)
@@ -47,6 +47,8 @@
 ;; State -> State
 ;; main function for game, start with (main "not-started")
 ;<no tests for main functions>
+
+(@template htdw-main)
 
 (define (main ws)
   (big-bang ws

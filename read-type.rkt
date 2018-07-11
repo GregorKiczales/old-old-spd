@@ -53,7 +53,6 @@
 (define (read-type-internal in recursive?)
   (define-values (line col pos) (port-next-location in))
   (let ([raw (read in)])
-    (print raw) (print (equal? raw '#\())
     (match raw
       [(? eof-object?)              raw]      
       
@@ -149,74 +148,74 @@
                    (loop (cons t result))))]))))
 
 
-(check-equal? (read-type-string "Number")            (atomic-type 'Number))
-(check-equal? (read-type-string "Integer")           (atomic-type 'Integer))
-(check-equal? (read-type-string "Natural")           (atomic-type 'Natural))
-
-(check-equal? (read-type-string "Number[1 , 2)")     (interval-type 'Number #t #f 1 2))
-(check-equal? (read-type-string "Natural(1 , 2]")    (interval-type 'Natural #f #t 1 2))
-(check-equal? (read-type-string "Integer(1 , 2)")    (interval-type 'Integer #f #f 1 2))
-(check-equal? (read-type-string "Number[1,2]")       (interval-type 'Number #t #t 1 2))
-(check-equal? (read-type-string "Number[1.0 , 2.0]") (interval-type 'Number #t #t 1.0 2.0))
-
-(check-equal? (read-type-string "\nNumber[1.0\n,\n2.0 \n]") (interval-type 'Number #t #t 1.0 2.0))
-
-(check-equal? (read-type-string "Boolean")           (atomic-type 'Boolean))
-
-(check-equal? (read-type-string "Foo")               (ref-type 'Foo))
-
-
-(check-equal? (read-type-string "\"\"")             (distinct-type ""))
-(check-equal? (read-type-string "\"red\"")          (distinct-type "red"))
-(check-equal? (read-type-string "true")             (distinct-type true))
-(check-equal? (read-type-string "false")            (distinct-type false))
-(check-equal? (read-type-string "empty")            (distinct-type empty))
-;(check-equal? (read-type-string "'()")              (distinct-type empty)) !!!
-
-(check-equal? (read-type-string "one of: \n ;; - Foo\n ;; - Number")
-              (one-of-type (list (ref-type 'Foo) (atomic-type 'Number))))
-
-(check-equal? (read-type-string "one of: \n ;; - Foo noise\n ;; - Number  noise")
-              (one-of-type (list (ref-type 'Foo) (atomic-type 'Number))))
-
-(check-equal? (read-type-string "( X Y -> Z )")
-              (function-type (list (ref-type 'X) (ref-type 'Y)) (ref-type 'Z)))
-
-
-(check-equal? (read-type-string "( X (x -> y) -> y )")
-              (function-type (list (ref-type 'X)
-                                   (function-type (list (ref-type 'x))
-                                                  (ref-type 'y)))
-                             (ref-type 'y)))
-
-
-(check-equal? (read-type-string "(make-foo Number Number)")
-              (compound-type 'make-foo (list (atomic-type 'Number) (atomic-type 'Number))))
-
-(check-equal? (read-type-string "(make-foo Number Number[1, 2] Number)")
-              (compound-type 'make-foo (list (atomic-type 'Number)
-                                             (interval-type 'Number #t #t 1 2)
-                                             (atomic-type 'Number))))
-
-
-
-(check-equal? (read-type-string "(make-foo (make-bar Number))")
-              (compound-type 'make-foo (list (compound-type 'make-bar (list (atomic-type 'Number))))))
-
-(check-equal? (read-type-string "(make-foo Number (make-bar Number) Foo)")
-              (compound-type 'make-foo (list (atomic-type 'Number)
-                                             (compound-type 'make-bar (list (atomic-type 'Number)))
-                                             (ref-type 'Foo))))
-
-(check-equal? (read-type-string "(make-foo (X -> Y))")
-              (compound-type 'make-foo (list (function-type (list (ref-type 'X)) (ref-type 'Y)))))
-
-(check-equal? (read-type-string "(make-foo (X -> Y) Number)")
-              (compound-type 'make-foo (list (function-type (list (ref-type 'X)) (ref-type 'Y))
-                                             (atomic-type 'Number))))
-
-(check-equal? (read-type-string "(make-foo Number (X -> Y))")
-              (compound-type 'make-foo (list (atomic-type 'Number)
-                                             (function-type (list (ref-type 'X)) (ref-type 'Y)))))
-
- 
+;(check-equal? (read-type-string "Number")            (atomic-type 'Number))
+;(check-equal? (read-type-string "Integer")           (atomic-type 'Integer))
+;(check-equal? (read-type-string "Natural")           (atomic-type 'Natural))
+;
+;(check-equal? (read-type-string "Number[1 , 2)")     (interval-type 'Number #t #f 1 2))
+;(check-equal? (read-type-string "Natural(1 , 2]")    (interval-type 'Natural #f #t 1 2))
+;(check-equal? (read-type-string "Integer(1 , 2)")    (interval-type 'Integer #f #f 1 2))
+;(check-equal? (read-type-string "Number[1,2]")       (interval-type 'Number #t #t 1 2))
+;(check-equal? (read-type-string "Number[1.0 , 2.0]") (interval-type 'Number #t #t 1.0 2.0))
+;
+;(check-equal? (read-type-string "\nNumber[1.0\n,\n2.0 \n]") (interval-type 'Number #t #t 1.0 2.0))
+;
+;(check-equal? (read-type-string "Boolean")           (atomic-type 'Boolean))
+;
+;(check-equal? (read-type-string "Foo")               (ref-type 'Foo))
+;
+;
+;(check-equal? (read-type-string "\"\"")             (distinct-type ""))
+;(check-equal? (read-type-string "\"red\"")          (distinct-type "red"))
+;(check-equal? (read-type-string "true")             (distinct-type true))
+;(check-equal? (read-type-string "false")            (distinct-type false))
+;(check-equal? (read-type-string "empty")            (distinct-type empty))
+;;(check-equal? (read-type-string "'()")              (distinct-type empty)) !!!
+;
+;(check-equal? (read-type-string "one of: \n ;; - Foo\n ;; - Number")
+;              (one-of-type (list (ref-type 'Foo) (atomic-type 'Number))))
+;
+;(check-equal? (read-type-string "one of: \n ;; - Foo noise\n ;; - Number  noise")
+;              (one-of-type (list (ref-type 'Foo) (atomic-type 'Number))))
+;
+;(check-equal? (read-type-string "( X Y -> Z )")
+;              (function-type (list (ref-type 'X) (ref-type 'Y)) (ref-type 'Z)))
+;
+;
+;(check-equal? (read-type-string "( X (x -> y) -> y )")
+;              (function-type (list (ref-type 'X)
+;                                   (function-type (list (ref-type 'x))
+;                                                  (ref-type 'y)))
+;                             (ref-type 'y)))
+;
+;
+;(check-equal? (read-type-string "(make-foo Number Number)")
+;              (compound-type 'make-foo (list (atomic-type 'Number) (atomic-type 'Number))))
+;
+;(check-equal? (read-type-string "(make-foo Number Number[1, 2] Number)")
+;              (compound-type 'make-foo (list (atomic-type 'Number)
+;                                             (interval-type 'Number #t #t 1 2)
+;                                             (atomic-type 'Number))))
+;
+;
+;
+;(check-equal? (read-type-string "(make-foo (make-bar Number))")
+;              (compound-type 'make-foo (list (compound-type 'make-bar (list (atomic-type 'Number))))))
+;
+;(check-equal? (read-type-string "(make-foo Number (make-bar Number) Foo)")
+;              (compound-type 'make-foo (list (atomic-type 'Number)
+;                                             (compound-type 'make-bar (list (atomic-type 'Number)))
+;                                             (ref-type 'Foo))))
+;
+;(check-equal? (read-type-string "(make-foo (X -> Y))")
+;              (compound-type 'make-foo (list (function-type (list (ref-type 'X)) (ref-type 'Y)))))
+;
+;(check-equal? (read-type-string "(make-foo (X -> Y) Number)")
+;              (compound-type 'make-foo (list (function-type (list (ref-type 'X)) (ref-type 'Y))
+;                                             (atomic-type 'Number))))
+;
+;(check-equal? (read-type-string "(make-foo Number (X -> Y))")
+;              (compound-type 'make-foo (list (atomic-type 'Number)
+;                                             (function-type (list (ref-type 'X)) (ref-type 'Y)))))
+;
+; 
