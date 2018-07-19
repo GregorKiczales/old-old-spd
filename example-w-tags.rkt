@@ -1,15 +1,15 @@
 ;; The first three lines of this file were inserted by DrRacket. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname example-w-tags) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #t)))
-(require spd/tags)
+(require "tags.rkt");spd/tags)
 (require 2htdp/universe)
 (require 2htdp/image)
 
-(@template Number (listof Number) (listof (listof X)) X)
+
 
 (@Problem 1)       ;from here to next @Problem is problem 1
-(@HtDF distance)     
-;; Number Number -> Number   
+(@HtDF distance)
+(@signature Number Number -> Number)
 ;; Produce cartesian distance from origin (0,0) to given (x,y).
 (check-expect (distance 3 4) 5)
 (check-within (distance 1 1) (sqrt 2) .00001)
@@ -30,9 +30,9 @@
 (@HtDD State)
 ;; State is one of:
 ;;  - "not-started"
-;;  - Number[0, 10]    ;see STATE-MIN and STATE-MAX
-;; interp. "not-started" until launched, afterwards the speed
-;;         in pixels per tick
+;;  - Number           ;see STATE-MIN and STATE-MAX
+;; interp. "not-started" until launched,
+;;          afterwards the speed in pixels per tick
 (define S1 "not-started")
 (define S2 3)
 
@@ -44,7 +44,7 @@
 
 (@Problem 3)
 (@HtDF main)
-;; State -> State
+(@signature State -> State)
 ;; main function for game, start with (main "not-started")
 ;<no tests for main functions>
 
@@ -55,7 +55,8 @@
     (on-tick tock)      ;State -> State
     (to-draw render)))  ;State -> Image
 
-;; State -> State
+(@HtDF tock)
+(@signature State -> State)
 ;; if started, advance by 1, looping back to STATE-MIN after STATE-MAX
 (check-expect (tock "not-started") "not-started")
 (check-expect (tock 1) 2)
@@ -74,7 +75,7 @@
 
 
 (@HtDF render)
-;; State -> Image
+(@signature State -> Image)
 ;; render the state, with press to start message or the number
 (check-expect (render "not-started")
               (text "Press space bar to start." 20 "black"))
@@ -88,4 +89,37 @@
               [else        (number->string s)])
         20
         "black"))
+
+
+(@Problem 4)
+(@HtDD Tree ListOfTree)
+(define-struct node (name subs))
+;; Tree is...
+;; ListOfTree is ...
+(@dd-template-rules compound atomic-non-distinct ref)
+(define (fn-for-tree t) ...)
+
+(@dd-template-rules one-of atomic-distinct compound ref self-ref)
+(define (fn-for-lot lot) ...)
+
+
+(define TC (make-node "c" empty))
+(define TD (make-node "d" empty))
+(define TA (make-node "a" (list (make-node "b" (list TC TD)))))
+
+
+(@HtDF search--tree)
+(@signature Tree String -> Tree or false)
+;; backtracking search for node named n
+;;!!
+(define (search--tree t n) false)
+
+(@HtDF search--lot)
+(@signature ListOfTree String -> Tree or false)
+;; backtracking search for node named n
+;;!!
+(define (search--lot lot n) false)
+
+
+
 

@@ -11,11 +11,15 @@
 ;; The file structure parser pulls apart the syntax later, knowing the
 ;; tags are are well-formed.
 
-(provide @Problem 
+(provide NON-TYPE-TEMPLATE-ORIGINS
+
+         @Problem 
 
          @HtDW      
          @HtDD      
-         @HtDF      
+         @HtDF
+
+         @signature
           
          @dd-template-rules 
          @template)
@@ -32,6 +36,20 @@
 (define-for-syntax TEMPLATE-ORIGINS
   '(;<TypeName>      decomposition and possible structural recursion
     add-param        ;use once for 1 or more atomic params
+    htdw-main    
+    fn-composition   ;use once for composition of 2 or more fns
+    backtracking     
+    2-one-of
+    encapsulated
+    use-abstract-fn
+    genrec
+    bin-tree         ;must be used w/ genrec
+    arb-tree         ;must be used w/ genrec
+    accumulator
+    for-each))
+
+(define NON-TYPE-TEMPLATE-ORIGINS ;same list but at meta 0
+  '(add-param        ;use once for 1 or more atomic params
     htdw-main    
     fn-composition   ;use once for composition of 2 or more fns
     backtracking     
@@ -71,6 +89,7 @@
 (define-@Tag-syntax @HtDF              "at least one" "function name"             check-htdf)
 (define-@Tag-syntax @HtDD              "at least one" "type name"                 check-htdd)
 (define-@Tag-syntax @HtDW                       "one" "type name"                 check-htdw) 
+(define-@Tag-syntax @signature         "at least one" "type name"                 check-signature)
 (define-@Tag-syntax @template          "at least one" "template origin"           check-template)
 (define-@Tag-syntax @dd-template-rules "at least one" "data driven template rule" check-dd-template-rules)
 
@@ -134,6 +153,18 @@
 
      (stepper-void)]))
 
+(define-syntax (check-signature stx)
+  (syntax-parse stx #:datum-literals (-> or false)
+    [(_ arg ... -> result or false) (check-types '@signature stx (syntax->datum #'(arg ... result))) (stepper-void)]
+    [(_ arg ... -> result)          (check-types '@signature stx (syntax->datum #'(arg ... result))) (stepper-void)]
+    [(_ ...)
+     (raise-syntax-error '@signature
+                         "Expected a signature with at least one argument type, followed by ->, followed by result type."
+                         #'stx
+                         #'stx)]))
+
+
+
 (define-syntax (check-template stx)    
   (syntax-case stx ()
     [(_ t ...)
@@ -144,8 +175,8 @@
             (cond [(looks-like-type-name? type) (check-type '@template stx type)]
                   [(symbol? type)
                    (when (not (member type TEMPLATE-ORIGINS))
-                    (raise-syntax-error '@template
-                                        (format "~a is not a legal type name, (listof <TypeName>), or one of ~s" type (format-list TEMPLATE-ORIGINS #t)) stx stx))
+                     (raise-syntax-error '@template
+                                         (format "~a is not a legal type name, (listof <TypeName>), or one of ~s" type (format-list TEMPLATE-ORIGINS #t)) stx stx))
                    (when (and (member type '(bin-tree arb-tree))
                               (not (member 'genrec ts)))
                      (raise-syntax-error '@template
@@ -154,18 +185,20 @@
                    (raise-syntax-error '@template (format "~a should be a TypeName or one of ~s." type TEMPLATE-ORIGINS) stx stx)])))
      (stepper-void)]))
 
+(define-for-syntax (check-types who stx types)
+  (for ([type types]) (check-type who stx type)))
 
 (define-for-syntax (check-type who stx type)
   (if (and (list? type)
-              (= (length type) 2)
-              (eqv? (first type) 'listof))
-         (check-type who stx (second type))
-         (when (and (not (member type PRIMITIVE-TYPES))
-                    (not (lookup-HtDD type))
-                    (not (and (symbol? type)
-                              (= (string-length (symbol->string type)) 1))))
+           (= (length type) 2)
+           (eqv? (first type) 'listof))
+      (check-type who stx (second type))
+      (when (and (not (member type PRIMITIVE-TYPES))
+                 (not (lookup-HtDD type))
+                 (not (and (symbol? type)
+                           (= (string-length (symbol->string type)) 1))))
 
-           (raise-syntax-error who
+        (raise-syntax-error who
                             (format "~a is not a primitive type, cannot find an @HtDD tag for it, and it is not a type parameter" type)
                             stx stx))))
 
