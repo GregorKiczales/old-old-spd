@@ -1,21 +1,26 @@
 #lang racket
 
 (require "tags.rkt")
-(require "dom.rkt")
+(require "dom.rkt") 
 
 (require handin-server/utils)
 (require (only-in handin-server/checker add-header-line!))
 
-(provide (all-defined-out)) ;!!!
+(provide grade-submission
+	 grade-problem
+	 grade-htdf
+	 grade-signature
+	 grade-template
+
+	;grade-htdd
+	;grade-htdw
+	 )
 
 ;; Grader for SPD problems.
 ;;  grader | problem | htdf | htdw | htdd | fn-defn ... all take list of weight
 ;;
 
-
-
-
-(struct score (v m rpts) #:transparent) 
+(struct score (v m rpts))
 
 (define (score-max s1 s2)
   (if (not (= (score-m s1) (score-m s2)))
@@ -30,8 +35,10 @@
          (append (score-rpts s1) (score-rpts s2))))
 
 
-;; grade-submission is handed the filename to grade, it expects to be running from within
-;; a checker defined by handin/handin-server/checker.
+;; grade-submission expects to be running from within a checker defined by handin/handin-server/checker.
+;; it gets the filename that #:create-text? creates, and re-reads the plain text from there.  This means
+;; that it can't run tests it pulls out of an htdf element, since some of their images and other values
+;; will be replaced.
 
 (define (text->file fn)
   (file (parse-elts (file->top-level-syntax fn))))
@@ -53,8 +60,9 @@
 (define context       (make-parameter #f))  ;Element;  the current enclosing element (file, problem, htdf etc.)
 
 
-;; !!! error handling
 
+;; !!! error handling  (errors -> failed submission)
+;; !!! make this provide score, and remind students they can re-submit
 (define-syntax (grade-submission stx)
   (syntax-case stx ()
     [(_ fn item ...)
@@ -65,6 +73,7 @@
      ]))
                    
 
+;; !!! make grade-xxx fail softer
 (define-syntax (grade-problem stx)
   (syntax-case stx ()
     [(_ n weight item ...)
@@ -83,23 +92,20 @@
 (define-syntax (grade-signature stx)
   (syntax-case stx ()
     [(_ n weight sol)
-     #'(parameterize ([context (list-ref (htdf-sigs (context)) n)]) ;make this fail softer
+     #'(parameterize ([context (list-ref (htdf-sigs (context)) n)])
          (check-signature (context) sol))]))
 
 
 (define-syntax (grade-template stx)
   (syntax-case stx ()
     [(_ n weight sol)
-     #'(parameterize ([context (list-ref (htdf-templates (context)) n)]) ;make this fail softer
+     #'(parameterize ([context (list-ref (htdf-templates (context)) n)])
          (check-template (context) sol))]))
 
 
-;; !!!
 (define (get-problem* n c) (scan-elts (lambda (x) (and (problem? x) (=      n (problem-num x)))) (file-elts c)))
 (define (get-htdf*    n c) (scan-elts (lambda (x) (and (htdf?    x) (member n (htdf-names x))))  (problem-elts c)))
-
-
-;htdd...
+;!!! htdd...
 
 
 
@@ -107,13 +113,17 @@
   (add-header-line! (format "Autograding score ~a out of ~a." (score-v s) (score-m s)))
   (for-each  add-header-line! (score-rpts s)))
 
+
 (define (combine-scores prefix scores)
   (score (foldr + 0 (map score-v scores))
          (foldr + 0 (map score-m scores))
-         (map (curry string-append prefix) (foldr append '() (map score-rpts scores)))))
+	 ;; !!! this could do nicer formatting with indentations or something
+         (map (curry string-append prefix)
+	      (foldr append '() (map score-rpts scores)))))
 
 (define (weight n . items)
-  (foldr score-plus (first items) (rest items))) ;!!!
+  ;; !!! this needs to do the actual weighting and error checking
+  (foldr score-plus (first items) (rest items))) 
 
 
                       
