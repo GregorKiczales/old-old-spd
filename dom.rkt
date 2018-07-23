@@ -38,8 +38,10 @@
   (or (scan-file (lambda (t) (and (htdw? t) (eqv? n (htdw-ws t)))) f)
       (error 'get-problem "No htdd for type named ~v." n)))
 
-(define (scan-file p f)
-  (let loop ([elts (file-elts f)])
+(define (scan-file p f) (scan-elts (file-elts f)))
+
+(define (scan-elts p elts)
+  (let loop ([elts elts])
     (cond [(empty? elts) #f]
           [(p (first elts)) (first elts)]
           [else
@@ -245,8 +247,5 @@
     ;; !!! do we add it to any specific elts? HtDD? HtDW? ???
     ))
 
-
-
-(define foo (parse-file "example-w-tags.rkt"))
 
 

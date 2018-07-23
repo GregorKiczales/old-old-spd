@@ -1,51 +1,25 @@
 #lang racket
 
 (require "tags.rkt")
-(require "grader-utils.rkt")
+(require "dom.rkt")
+
+(require handin-server/utils)
+(require (only-in handin-server/checker add-header-line!))
 
 (provide (all-defined-out)) ;!!!
 
 ;; Grader for SPD problems.
 ;;  grader | problem | htdf | htdw | htdd | fn-defn ... all take list of weight
 ;;
-#;
-(grader "Problem Set 3"
-        (weight .60
-                (problem 1
-                         (htdf name|num|pred
-                               (choose-max 
-                                (grade-signature htdf '(X Y Z))
-                                (grade-signature htdf '(A B C))))))
-  
-        (weight .40
-                (problem 2
-                         (grade-signature htdf `(,(get-elt 2 htdd) -> String or false))
-                         (grade-template  template '(,(get-elt 2 htdd) backtracking))
-                                             
-                         (grade-fn definition
-                                   (define (pyramid n i)
-                                     (cond [(zero? n) empty-image]
-                                           [else
-                                            (above (pyramid (sub1 n) i)
-                                                   (set-row n i))]))
-                                   (list '(0 COOKIES)
-                                         '(1 COOKIES)
-                                         '(3 COOKIES)))
-   
-                         (grade-checks checks false
-                                       (define (pyramid n i)
-                                         (cond [(zero? n) empty]
-                                               [else
-                                                (cons (pyramid (sub1 n) i)
-                                                      (set-row n i))]))))))
 
 
 
-(struct score (v m rpts) #:transparent)  ;!!! THIS HAS TO GET REPORTS TOO, SO THEY GET SELECTED BASED ON WHICH SCORE IS SELECTED
+
+(struct score (v m rpts) #:transparent) 
 
 (define (score-max s1 s2)
   (if (not (= (score-m s1) (score-m s2)))
-      (error (format "~a and ~a should have the same max." s1 s2))
+      (error (format "~a and ~a should be out of the same max." s1 s2))
       (if (> (score-m s1) (score-m s2))
           s1
           s2)))
@@ -56,51 +30,90 @@
          (append (score-rpts s1) (score-rpts s2))))
 
 
-;(define file-elements (make-parameter '()))
-(define context       (make-parameter #f))  ;(listof Element)
-(define report-prefix (make-parameter ""))  ;(listof String)   context scoping description in reverse order
+;; grade-submission is handed the filename to grade, it expects to be running from within
+;; a checker defined by handin/handin-server/checker.
 
-(define (report s) (print s))
+(define (text->file fn)
+  (file (parse-elts (file->top-level-syntax fn))))
+
+(define (file->top-level-syntax fn)
+  (parameterize ([read-accept-reader #t]
+		 [read-case-sensitive #t]
+		 [read-decimal-as-inexact #f])
+
+		(with-input-from-file fn read-top-level-syntax)))
+
+(define (read-top-level-syntax)
+  (let ([stx (read-syntax)])
+    (if (eof-object? stx)
+	'()
+	(cons stx (read-top-level-syntax)))))
+
+
+(define context       (make-parameter #f))  ;Element;  the current enclosing element (file, problem, htdf etc.)
+
 
 ;; !!! error handling
 
-(define-syntax (grader stx)
+(define-syntax (grade-submission stx)
   (syntax-case stx ()
-    [(_ desc items ...)
-     #'(define (checker submission users)
-         (parameterize (;[file-elements xx]
-                        [context (parse-submission submission)]
-                        [report-prefix ""]
-                        ;[reports '()]
-                        )
-           (combine-scores items...)))]))
+    [(_ fn item ...)
+     #'(parameterize ([context (text->file fn)])
+	(report-score
+	  (combine-scores ""
+			  (list item ...))))
+     ]))
                    
 
-(define-syntax (problem stx)
+(define-syntax (grade-problem stx)
   (syntax-case stx ()
-    [(_ n desc items ...)
-     #'(parameterize ([context (get-problem* n (context))]
-                      [report-prefix (cons (format "Problem ~a: " n) report-prefix)]
-                      ;[reports '()]
-                      )
-         (combine-scores items...))]))
+    [(_ n weight item ...)
+     #'(parameterize ([context (get-problem* n (context))])
+         (combine-scores (format "In (@problem ~a), " n)
+                         (list item ...)))]))
 
-(define-syntax (htdf stx)
+(define-syntax (grade-htdf stx)
   (syntax-case stx ()
-    [(_ n desc items ...)
-     #'(parameterize ([context (get-htdf* n (context))]
-                      [report-prefix (string-append report-prefix (format "HtDF ~a: " (htdf-names (context))))]
-                      ;[reports '()]
-                      )
-         (combine-scores items...))]))
+    [(_ n weight item ...)
+     #'(parameterize ([context (get-htdf* n (context))])
+         (combine-scores (format "in (@HtDF ~a), " n)
+                         (list item ...)))]))
+
+
+(define-syntax (grade-signature stx)
+  (syntax-case stx ()
+    [(_ n weight sol)
+     #'(parameterize ([context (list-ref (htdf-sigs (context)) n)]) ;make this fail softer
+         (check-signature (context) sol))]))
+
+
+(define-syntax (grade-template stx)
+  (syntax-case stx ()
+    [(_ n weight sol)
+     #'(parameterize ([context (list-ref (htdf-templates (context)) n)]) ;make this fail softer
+         (check-template (context) sol))]))
+
+
+;; !!!
+(define (get-problem* n c) (scan-elts (lambda (x) (and (problem? x) (=      n (problem-num x)))) (file-elts c)))
+(define (get-htdf*    n c) (scan-elts (lambda (x) (and (htdf?    x) (member n (htdf-names x))))  (problem-elts c)))
+
 
 ;htdd...
 
-(define (combine-scores . items)
-  '!!!)
+
+
+(define (report-score s)
+  (add-header-line! (format "Autograding score ~a out of ~a." (score-v s) (score-m s)))
+  (for-each  add-header-line! (score-rpts s)))
+
+(define (combine-scores prefix scores)
+  (score (foldr + 0 (map score-v scores))
+         (foldr + 0 (map score-m scores))
+         (map (curry string-append prefix) (foldr append '() (map score-rpts scores)))))
 
 (define (weight n . items)
-  '!!!)
+  (foldr score-plus (first items) (rest items))) ;!!!
 
 
                       
@@ -111,8 +124,8 @@
      #'(let* ([max-score (+ V ...)]
               [items     (list (list V (lambda () Q) (format T . FMT-ARGS)) ...)]
               [applied   (filter (lambda (i) (not ((cadr i)))) items)])
-         (score max-score
-                (- max-score (foldr + 0 (map car applied)))
+         (score (- max-score (foldr + 0 (map car applied))) 
+		max-score
                 (foldr cons empty (map caddr applied))))]))
 
 
@@ -158,25 +171,3 @@
 
 (define (check-submission-tests x) (score 0 0 ""))
 (define (check-submission-function x) (score 0 0 ""))
-;(define (check-submission-tests x) (score 0 0 ""))
-  
-                          
-
-'signatures
-(check-signature (signature '(X) #f #f)    '(X Y -> Z)) 
-(check-signature (signature '(Y X) #f #f)  '(X Y -> Z))
-(check-signature (signature '(X Y) #f #f)  '(X Y -> Z))
-(check-signature (signature '(X Y) 'Z #f)  '(X Y -> Z))
-(check-signature (signature '(X Y) 'Z #t)  '(X Y -> Z or false))
-
-'templates
-(check-template (template '(Foo)) '(Foo))
-(check-template (template '()) '(Foo))
-(check-template (template '(Foo Bar)) '(Foo))
-(check-template (template '(Bar)) '(Foo))
-
-(check-template (template '(genrec)) '(genrec))
-(check-template (template '()) '(genrec))
-(check-template (template '(encapsulated genrec)) '(genrec))
-(check-template (template '(encapsulated)) '(genrec))
-                  
