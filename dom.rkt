@@ -120,7 +120,7 @@
                [(is-function-definition? stx)  (parse-fn-defn stx)]
                [(is-constant-definition? stx)  (parse-const-defn stx)]
   
-               [else                           (void)]))
+               [else                           (add-elt (syntax->datum stx))]))
 
     (reverse (all-elements))))
 
