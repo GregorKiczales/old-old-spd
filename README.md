@@ -24,11 +24,12 @@ The following tags are currently in use:
 * `(@HtDD TypeName1 TypeName2..TypenameN)`
 * `(@HtDW TypeName)`
 * `(@dd-template-rules r1 r2..rN)]`
+* `(@Signature TypeName1 TypeName2..TypenameN -> TypeName)`
 * `(@template s1 s2..sN)`
 
 ### `(@Problem n)`
 
-**Restrictions:** n>=1, first `(@Problem ...)` tag in a file must have arity 1. Other follow in sequence.
+**Restrictions:** n>=1, first `(@Problem ...)` tag in a file must have n=1. Other follow in sequence.
 
 Indicates that the contents of the `.rkt` file from one `@Problem` tag to the next immediate one comprise the solutions to problem n. E.g. Contents of file in between `(@Problem n)` and `(@Problem n+1)` are the student's solutions to problem n.
 
@@ -46,14 +47,14 @@ Usage:
 **Restrictions:** n>=1, type definition must immediately follow the tag, grouping is permissible, like `@HtDF` starting from the module on mutual-reference.
 
 Usage
-```
+```Racket
 (@HtDD StreetLight)
 ;; StreetLight is one of:
 ;; !!!
 
 (@HtDD Student)
 (define-struct student(id name major year))
-;; Student is (make-student Natural String String Natural[1,5])
+;; Student is (make-student Natural String String Natural)
 ;; !!!
 ```
 ### (@HtDW TypeName)
@@ -101,9 +102,9 @@ Usage:
 
 ### (@template s1 s2...sN)
 
-**Restrictions:** s1, s2, ... , sN can only be one of the following types:
+**Restrictions:** s1, s2, ... , sN must be unique unless they are a TypeName, and can only be one of the following types:
 * `TypeName`: Where we previously said "type", we now put the actual name of the type the template is based on.
-* `add-param`: the template has an additional parameter, treated as atomic data
+* `add-param`: the template has an additional parameter (or more than one), treated as atomic data
 * `htdw-main`: templated as a main function in the HtDW recipe, with a call to big-bang
 * `fn-composition`: templated as a composition of calls to two or more helper functions
 * `backtracking`: template includes backtracking search
@@ -118,5 +119,3 @@ Usage:
 ## Glossary
 
 1. Metadata: *"data about data"*. Specfically with regards to SPD, it describes the information about a xSL program, which, is in itself - data.
-
-

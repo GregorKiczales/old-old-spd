@@ -1,0 +1,6 @@
+Justin Hu <justin.hu@alumni.ubc.ca>
+2018-08-28
+
+These three are the ONLY checker.rkt files for specific assignment directories.
+They are named with the language level they support.
+On pain of handin breaking, do not edit these!

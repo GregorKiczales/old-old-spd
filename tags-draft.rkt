@@ -155,8 +155,12 @@
 
 (define-syntax (check-signature stx)
   (syntax-parse stx #:datum-literals (-> or false)
-    [(_ arg ... -> result or false) (check-types '@signature stx (syntax->datum #'(arg ... result))) (stepper-void)]
-    [(_ arg ... -> result)          (check-types '@signature stx (syntax->datum #'(arg ... result))) (stepper-void)]
+    [(_ arg ... -> result or false) (and (check-types '@signature stx (filter (compose not (curry member ->)) (syntax->datum #'(arg ... result))))
+					 (andmap check-signature (filter (curry member '->) #'(arg ... result))))
+				    (stepper-void)]
+    [(_ arg ... -> result)          (and (check-types '@signature stx (filter (compose not (curry member ->)) (syntax->datum #'(arg ... result))))
+					 (andmap check-signature (filter (curry member '->) #'(arg ... result))))
+				    (stepper-void)]
     [(_ ...)
      (raise-syntax-error '@signature
                          "Expected a signature with at least one argument type, followed by ->, followed by result type."
@@ -194,27 +198,6 @@
   (for ([type types]) (check-type who stx type)))
 
 (define-for-syntax (check-type who stx type)
-  (cond ((and (list? type)
-	      (= (length type) 2)
-	      (eqv? (first type) 'listof))
-	 (check-type who stx (second type)))
-	((and (list? type)
-	      (member '-> type))
-	 (andmap (lambda (t)
-		   (check-type who stx t))
-		 type))
-	(else
-	 (when (and (not (member type PRIMITIVE-TYPES))
-		    (not (lookup-HtDD type))
-		    (not (and (symbol? type)
-			      (= (string-length (symbol->string type)) 1))))
-	       
-	       (raise-syntax-error who
-				   (format "~a is not a primitive type, cannot find an @HtDD tag for it, and it is not a type parameter" type)
-				   stx stx)))))
-
-#;
-(define-for-syntax (check-type who stx type)
   (if (and (list? type)
            (= (length type) 2)
            (eqv? (first type) 'listof))
@@ -223,7 +206,6 @@
                  (not (lookup-HtDD type))
                  (not (and (symbol? type)
                            (= (string-length (symbol->string type)) 1))))
-
         (raise-syntax-error who
                             (format "~a is not a primitive type, cannot find an @HtDD tag for it, and it is not a type parameter" type)
                             stx stx))))

@@ -38,7 +38,7 @@
   (or (scan-file (lambda (t) (and (htdw? t) (eqv? n (htdw-ws t)))) f)
       (error 'get-problem "No htdd for type named ~v." n)))
 
-(define (scan-file p f) (scan-elts (file-elts f)))
+(define (scan-file p f) (scan-elts p (file-elts f)))
 
 (define (scan-elts p elts)
   (let loop ([elts elts])
@@ -92,15 +92,13 @@
 
 ;; -> (listof Syntax)
 (define (read-top-level p)
-  (rest
+  (cdr
    (syntax-e
-    (fourth
+    (cadddr
      (syntax-e
       (parameterize ([current-input-port p]  ;(ensure-text-port  ;!!!???
                      [read-accept-reader #t])
         (read-syntax)))))))
-
-
 
 
 (define (parse-elts lostx)
@@ -139,7 +137,6 @@
                (loop (rest elts)))])))
 
 (define (rcons lox x) (append lox (list x)))
-
 
 
 (define (parse-problem tag)
@@ -196,9 +193,8 @@
          [elt     (dd-template-rules rules)]
          [htdd    (first-elt htdd?)])
     (add-elt elt)
-    (when htdf
+    (when htdd
       (set-htdd-rules! htdd (rcons (htdd-rules htdd) elt)))))
-
 
 
 (define (parse-check stx)
@@ -207,8 +203,11 @@
     (when (and (pair? (cadr exp))
                (symbol? (caadr exp)))
       (let ([htdf (first-elt (lambda (e)
-                               (and (htdf? e)
-                                    (member (caadr exp) (htdf-names e)))))])
+                               (let ([exp-actual (cadr exp)])
+                                 (and (htdf? e)
+                                       (or (member (car exp-actual) (htdf-names e))
+                                           (and (eqv? (car exp-actual) 'local)
+                                               (member (caaddr exp-actual) (htdf-names e))))))))])
         (when htdf
           (set-htdf-checks! htdf (rcons (htdf-checks htdf) exp)))))))
 
@@ -217,9 +216,7 @@
   (let* ([elt (syntax->datum stx)]
          [name (caadr elt)]
          [sname (symbol->string name)])
-    
     (add-elt elt)
-    
     (cond [(regexp-match #rx"fn-for-.*" sname)
            (let* ([tname (substring sname (string-length "fn-for-"))]
                   [htdd  (first-elt (lambda (e)
@@ -228,7 +225,6 @@
                                                     (string=? tname
                                                               (string-downcase (symbol->string n))))
                                                   (htdd-names e)))))])
-             
              (when htdd
                (set-htdd-templates! htdd (rcons (htdd-templates htdd) elt))))]
           [else
