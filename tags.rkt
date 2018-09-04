@@ -66,9 +66,9 @@
 (define-for-syntax PROBLEMS empty) ;(listof Natural) built in expansion phase 1
 
 
-(define-for-syntax (stepper-void)  
-  (with-stepper-syntax-properties (['stepper-skip-completely #t])
-                                  #'(void)))
+(define-for-syntax (stepper-void)
+  (with-stepper-syntax-properties (['stepper-hide-reduction #t])
+				  #`(void)))
 
 
 ;; Sets up 2 phase expansion.  First phase is basic syntax, second phase checks
@@ -80,9 +80,15 @@
          (unless (member (syntax-local-context) '(module top-level))            
            (raise-syntax-error #f (format "Found ~a that is not at top level" 'tag) stx))         
          (syntax-case stx ()
-           [(_)        (raise-syntax-error #f (format "expected ~a ~a after ~a" arity-string kind-string 'tag) stx)]
-           [(_ . id)   (set! TAGS (cons stx TAGS)) (with-stepper-syntax-properties (['stepper-skip-completely #t]) #'(#%expression (checker . id)))]
-           [_          (raise-syntax-error #f (format "expected an open parenthesis before ~a" 'tag) stx)]))]))
+           [(_)       
+	    (raise-syntax-error #f (format "expected ~a ~a after ~a" arity-string kind-string 'tag) stx)]
+           [(_ . id)   
+	    (set! TAGS (cons stx TAGS)) 
+	    (with-stepper-syntax-properties (['stepper-skip-completely #t]
+					     ['stepper-hide-reduction #t])
+	      #'(#%expression (checker . id)))]
+           [_ 
+	    (raise-syntax-error #f (format "expected an open parenthesis before ~a" 'tag) stx)]))]))
                                              
 
 (define-@Tag-syntax @Problem                    "one" "integer greater than 0"    check-problem)
@@ -155,8 +161,8 @@
 
 (define-syntax (check-signature stx)
   (syntax-parse stx #:datum-literals (-> or false)
-    [(_ arg ... -> result or false) (check-types '@signature stx (syntax->datum #'(arg ... result))) (stepper-void)]
-    [(_ arg ... -> result)          (check-types '@signature stx (syntax->datum #'(arg ... result))) (stepper-void)]
+    [(_ arg ... -> result or false) (check-types '@signature stx (syntax->datum #'(arg ...))) (stepper-void)]
+    [(_ arg ... -> result)          (check-types '@signature stx (syntax->datum #'(arg ...))) (stepper-void)]
     [(_ ...)
      (raise-syntax-error '@signature
                          "Expected a signature with at least one argument type, followed by ->, followed by result type."
@@ -200,9 +206,10 @@
 	 (check-type who stx (second type)))
 	((and (list? type)
 	      (member '-> type))
-	 (andmap (lambda (t)
-		   (check-type who stx t))
-		 type))
+	 (and (andmap (lambda (t)
+			(check-type who stx t))
+		      (reverse (cdr (member '-> (reverse type)))))
+	      (check-type who stx (cadr (member '-> type)))))
 	(else
 	 (when (and (not (member type PRIMITIVE-TYPES))
 		    (not (lookup-HtDD type))
