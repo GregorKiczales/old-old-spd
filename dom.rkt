@@ -217,6 +217,7 @@
          [name (caadr elt)]
          [sname (symbol->string name)])
     (add-elt elt)
+    #;
     (cond [(regexp-match #rx"fn-for-.*" sname)
            (let* ([tname (substring sname (string-length "fn-for-"))]
                   [htdd  (first-elt (lambda (e)

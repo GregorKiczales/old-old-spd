@@ -59,14 +59,14 @@
     [(_ w exp ...)
      #'(with-handlers ([void (lambda (e)
                                (unless (exn:fail:student? e)
-				       ((logger) (string-append (if (exn:fail:internal? e) "!!!Internal Error:" "Unclassified Error:")
+				       ((logger) (string-append (if (exn:fail:internal? e) "Internal Error:" "Unclassified Error:")
 								(exn-message e))))
                                (score w 0 (list (exn-message e))))])
           exp ...)]))
 
-(define (check-context p str)
+(define (check-context p who str)
   (unless (p (context))
-    (raise-internal-error "Grader uses grade-submission in a ~a context." str)))
+    (raise-internal-error "~a is used in a ~a context." who str)))
 
 (define (check-bounds n max kind)
   (unless (valid-index (sub1 n) max) (raise-student-error "could not find the ~a ~a" (number->ordinal n) kind)))
@@ -107,14 +107,14 @@
 			[reporter  rpt])
 	   (let ([s (recovery-point 1 (weight 1 (combine-scores "" (list item ...))))])
 	     (report-score s)
-	     (format "Your autograding grade was ~a.~%You may resubmit as many times as you wish before the deadline." (pretty-print-percent (score-v s))))))]))
+	     (format "Autograding grade is ~a." (pretty-print-percent (score-v s))))))]))
 
 
 (define-syntax (grade-problem stx)
   (syntax-case stx ()
     [(_ w n item ...)
      #'(recovery-point w
-         (check-context file? "non-file")
+         (check-context file? 'grade-problem "non-file")
          (parameterize ([context (get-problem* n (context))])
            (weight w (combine-scores (format "In (@Problem ~a), " n) (list item ...)))))]))
 
@@ -122,7 +122,7 @@
   (syntax-case stx ()
     [(_ w n item ...)
      #'(recovery-point w
-         (check-context problem? "non-problem")
+         (check-context problem? 'grade-htdf "non-problem")
          (parameterize ([context (if (number? 'n)
                                      (let ([htdf-list (filter htdf? (problem-elts (context)))])
                                        (check-bounds 'n (length htdf-list) "HtDF")
@@ -134,7 +134,7 @@
   (syntax-case stx ()
     [(_ w)
      #'(recovery-point w
-         (check-context htdf? "non-HtDF")
+         (check-context htdf? 'grade-htdf-coherence "non-HtDF")
          (weight w
                  (check-htdf-coherence (context))))]))
 
@@ -142,7 +142,7 @@
   (syntax-case stx ()
     [(_ w n sol)
      #'(recovery-point w
-         (check-context htdf? "non-HtDF")
+         (check-context htdf? 'grade-signature "non-HtDF")
          (check-bounds n (length (htdf-sigs (context))) "signature")
          (parameterize ([context (list-ref (htdf-sigs (context)) (sub1 n))])
            (weight w (check-signature (context) 'sol))))]))
@@ -151,7 +151,7 @@
   (syntax-case stx ()
     [(_ w n sol)
      #'(recovery-point w
-         (check-context htdf? "non-HtDF")
+         (check-context htdf? 'grade-template "non-HtDF")
          (check-bounds n (length (htdf-templates (context))) "template")
          (parameterize ([context (list-ref (htdf-templates (context)) (sub1 n))])
            (weight w (check-template (context) 'sol))))]))
@@ -160,7 +160,7 @@
   (syntax-case stx ()
     [(_ w n min)
      #'(recovery-point w
-         (check-context htdf? "non-HtDF")
+         (check-context htdf? 'grade-submitted-tests "non-HtDF")
          (check-bounds n (length (htdf-names (context))) "function")
          (let* ([fn-name (list-ref (htdf-names (context)) (sub1 n))]
                 [tests   (filter (lambda (t)
@@ -175,38 +175,52 @@
   (syntax-case stx ()
     [(_ w n test ...)
      #'(recovery-point w
-         (check-context htdf? "non-HtDF")
-         (weight w (check-tests 0 "additional" (list 'test ...))))]))
+         (check-context htdf? 'grade-additional-tests "non-HtDF")
+         (weight w (check-tests 0 "additional"
+				 (list 'test ...))))]))
 
 ;; defined function(s) should fail at least one test.
 (define-syntax (grade-tests-thoroughness stx)
   (syntax-case stx ()
     [(_ w n defines ...)
      #'(recovery-point w
-         (check-context htdf? "non-HtDF")
+         (check-context htdf? 'grade-tests-thoroughness "non-HtDF")
          (check-bounds n (length (htdf-names (context))) "function")
-         (let ([record empty])
-           (for ([def (list 'defines ...)])
-             (let* ([fn-name (list-ref (htdf-names (context)) (sub1 n))]
-                    [tests (filter (lambda (t) (eqv? (caadr t) fn-name))
-                                   (htdf-checks (context)))]
-                    [new-fn-name (gensym)]
-                    [new-tests (subst new-fn-name fn-name tests)])
-               ((evaluator) (subst new-fn-name fn-name def)) ;; !!! handle this more specifically?
-               (let ([result (check-tests 0 "submitted against our definition" new-tests)])
-                 (set! record (cons (= 1 (round* (score-v result) 2)) record)))))
-           (let ([ngood (length (filter not record))]
-                 [nbad (length (filter identity record))]
-                 [ntotal (length record)])
-             (score w (/ ngood ntotal) (if (= ngood ntotal)
-                                           empty
-                                           (list (format "~a out of ~a buggy functions passed all submitted tests" nbad ntotal)))))))]))
+	 (check-thoroughness w n (list 'defines ...)))]))
+
+(define (check-thoroughness w n all-defs)
+  (let* ([fn-name (list-ref (htdf-names (context)) (sub1 n))]
+	 [tests (filter (lambda (t) (eqv? (caadr t) fn-name))
+			(htdf-checks (context)))]
+	 [nfuns (length all-defs)])
+    (let loop ([defs all-defs]
+	       [ndetected 0])
+      
+      (if (empty? defs)
+	  (score w
+		 (/ ndetected nfuns)
+		 (if (= ndetected nfuns)
+		     '()
+		     (list (format "submitted tests failed to detect ~a out of our ~a buggy functions"
+				   (- nfuns ndetected)
+				   nfuns))))
+	
+	  (let* ([new-fn-name (gensym)]
+		 [new-tests (subst new-fn-name fn-name tests)])	    ;!!! hygiene goes right out the window
+	    ((evaluator) (subst new-fn-name fn-name (first defs)))  ;!!! hygiene goes right out the window
+	    
+	    (let ([result (check-tests 0 "submitted against our definition" new-tests)])
+	      (loop (rest defs)
+		    (if (ormap (compose not eval-check) new-tests)
+			(add1 ndetected)
+			ndetected))))))))
+
 
 (define-syntax (grade-htdd stx)
   (syntax-case stx ()
     [(_ w n item ...)
      #'(recovery-point w
-         (check-context htdd? "non-HtDD")
+         (check-context problem? 'grade-htdd "non-problem")
          (parameterize ([context (if (number? 'n)
                                      (let ([htdd-list (filter htdd? (problem-elts (context)))])
                                         (if (not (valid-index (sub1 'n) (length htdd-list)))
@@ -219,7 +233,7 @@
   (syntax-case stx ()
     [(_ w n sol)
      #'(recovery-point w
-         (check-context htdd? "non-HtDD")
+         (check-context htdd? 'grade-dd-template-rules "non-HtDD")
          (check-bounds n (length (htdd-rules (context))) "template rules")
          (parameterize ([context (list-ref (htdd-rules (context)) (sub1 n))])
            (weight w (check-dd-template-rules (context) 'sol))))]))
@@ -228,7 +242,7 @@
   (syntax-case stx ()
     [(_ w)
      #'(recovery-point w
-         (check-context htdd? "non-HtDD")
+         (check-context htdd? 'grade-htdd-coherence "non-HtDD")
          (weight w (check-htdd-coherence (context))))]))
 
 ;; get- utility functions
@@ -344,17 +358,19 @@
          [ntests (length test-exprs)]
          [npass (length (filter identity results))]
          [enough
-          (cond [(= min 0) false]
-                [(>= ntests min) (score 0.5 1 empty)]
+          (cond [(= min 0)       (score 0  0 '())]
+                [(>= ntests min) (score .5 1 empty)]
                 [else
-                 (score 0.5 0 (list (format "insufficient ~a tests, at least ~a required" source min)))])]
+                 (score .5 0 (list (format "insufficient ~a tests, at least ~a required" source min)))])]
          [corr
-          (score 1
-                 (if (<= ntests 0) 0 (/ npass ntests))
+          (score (if (= min 0) 1 .5)
+                 (if (= ntests 0) 0 (/ npass ntests))
                  (cond [(= ntests npass) empty]
                        [(= ntests 1) (list (format "sole ~a test failed" source))]
                        [else
                         (list (format "~a of ~a ~a tests failed" (- ntests npass) ntests source))]))])
+    (combine-scores "" (list enough corr))
+    #;
     (if (not (false? enough)) ;; if we are checking for number of tests, combine them. Otherwise, just take correctness as the score
         (score 1
                (+ (* 0.5 (score-v corr))
@@ -364,23 +380,27 @@
         corr)))
 
 (define (eval-check test-expr)
-  (with-handlers ([void (lambda (e) false)]) ;; red errors are treated like a failed test !!!: should this be a file rejection?, can't check for errors in our given expression.
-    (case (car test-expr)
-      [(check-expect) (equal? ((evaluator) (cadr test-expr))
-                              ((evaluator) (caddr test-expr)))]
-      [(check-within) (let ([delta ((evaluator) (cadddr test-expr))]
-                            [expected ((evaluator) (caddr test-expr))]
-                            [actual ((evaluator) (cadr test-expr))])
-                        (unless (and (number? delta) (number? expected) (number? actual)) true) ;; Assume they pass this - we can't check. !!!
-                        (within? expected actual delta))]
-      [else (let ([result ((evaluator) test-expr)]) ;; they used another type of check, or it's a submitted check with a lambda.
-              (if (boolean? result)
-                  result
-                  true))])))
+  (with-handlers ([void (lambda (e)
+			  ((logger) (format "Error running test ~s: ~a" test-expr (exn-message e)))
+			  false)])
+		 (cond [(and (pair? test-expr) (eq? (car test-expr) 'check-expect))
+			(equal? ((evaluator) (cadr test-expr))
+				((evaluator) (caddr test-expr)))]
+		       [(and (pair? test-expr) (eq? (car test-expr) 'check-within))
+			(<= (magnitude ((evaluator) (cadr test-expr))
+				       ((evaluator) (caddr test-expr)))
+			    ((evaluator) (cadddr test-expr)))]
+		       [else
+			(let ([result ((evaluator) test-expr)])
+			  (if (boolean? result)
+			      result
+			      true))])))  ;this really is a grader file error
 
 (define (check-htdd-coherence htdd)
-  (let ()
-    (rubric [1 (= (length (htdd-names htdd)) (length (htdd-templates htdd))) "number of data types and @templates is not the same"])))
+  (score 1 1 '())
+;  (let ()
+;    (rubric [1 (= (length (htdd-names htdd)) (length (htdd-templates htdd))) "number of data types and templates is not the same"]))
+  )
 
 (define (check-dd-template-rules sub sol)
   (let* ([sub-rules (dd-template-rules-rules sub)]
